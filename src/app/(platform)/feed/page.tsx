@@ -4,10 +4,12 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../app/api/auth/[...nextauth]/route'
 import FilterIconButton from '../../../shared/components/FilterIconButton'
 import GlobalFilterOverlay from '../../../shared/components/GlobalFilterOverlay'
+import { redirect } from 'next/navigation'
 
 export default async function FeedPage() {
   const session = await getServerSession(authOptions)
-  const currentUserId = session?.user?.id ?? null
+  if (!session) redirect('/login')
+  const currentUserId = session.user.id
 
   const posts = await prisma.posts.findMany({
     where: { visibility: 'public' },
