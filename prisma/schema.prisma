@@ -1,0 +1,540 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// ENUMS
+// Enums are fixed sets of allowed values for a field.
+// Django equivalent:
+// class AccountType(models.TextChoices):
+//     RESEARCHER = 'researcher'
+//     FUNDING_AGENCY = 'funding_agency'
+// ============================================================
+
+enum AccountType {
+  researcher
+  funding_agency
+}
+
+enum AcademicLevel {
+  undergraduate
+  postgraduate
+  phd
+  professor
+  researcher
+  industry
+}
+
+enum AuthTokenType {
+  email_verification
+  password_reset
+}
+
+enum UrgencyLevel {
+  critical
+  moderate
+  exploratory
+}
+
+enum PostType {
+  collaboration
+  help
+  finished_work
+  funding_opportunity
+}
+
+enum Visibility {
+  public
+  friends_only
+  university_only
+}
+
+enum ConnectionType {
+  friend
+  follow
+}
+
+enum ConnectionStatus {
+  pending
+  accepted
+  rejected
+  removed
+}
+
+enum GroupRole {
+  admin
+  member
+}
+
+enum CollabRequestStatus {
+  pending
+  accepted
+  rejected
+  withdrawn
+}
+
+// ============================================================
+// USERS
+// Core identity table. Every account starts here.
+// Django equivalent: AbstractUser model
+// ============================================================
+
+model users {
+  // UUID primary key — more secure than auto-increment integers
+  // @default(uuid()) — Prisma generates a UUID automatically on creation
+  // Django equivalent: id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+  id        String      @id @default(uuid())
+
+  email     String      @unique
+  // @unique — no two users can have the same email
+  // Django equivalent: email = models.EmailField(unique=True)
+
+  passwordHash String
+  // we never store plain passwords — always hashed with bcrypt
+  // Django equivalent: password = models.CharField() — Django hashes automatically
+  // in Next.js we handle hashing manually in the auth service
+
+  accountType AccountType
+  // uses the AccountType enum defined above
+  // only 'researcher' or 'funding_agency' allowed
+
+  displayName String
+  avatarUrl   String?
+  // ? means optional — this field can be null
+  // Django equivalent: avatar_url = models.URLField(null=True, blank=True)
+
+  isVerified  Boolean @default(false)
+  // false until user clicks email verification link
+  // Django equivalent: is_verified = models.BooleanField(default=False)
+
+  isActive    Boolean @default(true)
+  // false if account is banned or deactivated
+
+  notificationPreferences Json @default("{}")
+  // JSONB field — stores flexible notification settings
+  // example: {"email": true, "push": false, "connection_requests": true}
+  // Django equivalent: notification_preferences = models.JSONField(default=dict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  // @updatedAt — Prisma automatically updates this on every save
+  // Django equivalent: updated_at = models.DateTimeField(auto_now=True)
+
+  // RELATIONS — these are not columns, they tell Prisma how tables connect
+  // Django equivalent: reverse relations from ForeignKey fields
+  researcher        researchers?
+  fundingAgency     funding_agencies?
+  authTokens        auth_tokens[]
+  posts             posts[]
+  connections       connections[]       @relation("requester")
+  receivedConnections connections[]     @relation("receiver")
+  collabRequests    collaboration_requests[]
+  groupMembers      group_members[]
+  postReactions     post_reactions[]
+  postSaves         post_saves[]
+}
+
+// ============================================================
+// RESEARCHERS
+// Extended profile for researcher accounts only.
+// Separate table so funding agencies don't have these fields.
+// Django equivalent: OneToOneField(User) profile model
+// ============================================================
+
+model researchers {
+  // userId is both the primary key AND a foreign key to users
+  // @id — this is the primary key
+  // @map("userId") — the actual column name in PostgreSQL is "userId"
+  userId      String      @id
+
+  institution String?
+  academicLevel AcademicLevel?
+  bio         String?
+  orcidId     String?
+  googleScholarId String?
+
+  // RELATION — connects back to users table
+  // fields: [userId] — the foreign key column in THIS table
+  // references: [id] — the primary key column in the users table
+  // Django equivalent: user = models.OneToOneField(User, on_delete=models.CASCADE)
+  user        users       @relation(fields: [userId], references: [id])
+
+  qualification researcher_qualifications?
+  researchFields researcher_fields[]
+}
+
+// ============================================================
+// RESEARCHER QUALIFICATIONS
+// Scores and metrics that determine what a researcher can access.
+// Separate table because these update frequently and independently.
+// ============================================================
+
+model researcher_qualifications {
+  researcherId    String  @id
+
+  hIndex          Int     @default(0)
+  citationCount   Int     @default(0)
+  publicationCount Int    @default(0)
+  starScore       Float   @default(0)
+  feedbackQualityScore Float @default(0)
+  contributionPoints Int  @default(0)
+  qualificationScore Float @default(0)
+  // qualificationScore is computed from all other fields
+  // business rule: HelpPost minQualificationScore checked against this
+
+  researcher      researchers @relation(fields: [researcherId], references: [userId])
+}
+
+// ============================================================
+// FUNDING AGENCIES
+// Extended profile for funding agency accounts only.
+// ============================================================
+
+model funding_agencies {
+  userId      String  @id
+
+  orgName     String
+  website     String?
+  country     String?
+  description String?
+
+  user        users   @relation(fields: [userId], references: [id])
+}
+
+// ============================================================
+// AUTH TOKENS
+// Email verification and password reset tokens.
+// Business rules:
+// - Hash with SHA-256 before storing
+// - Set usedAt when token is used
+// - Never delete tokens — keep audit trail
+// ============================================================
+
+model auth_tokens {
+  id          String        @id @default(uuid())
+  userId      String
+  tokenHash   String        @unique
+  tokenType   AuthTokenType
+  expiresAt   DateTime
+  usedAt      DateTime?
+  // null means not yet used
+  // set to current timestamp when token is consumed
+
+  user        users         @relation(fields: [userId], references: [id])
+}
+
+// ============================================================
+// FIELDS AND SUBFIELDS
+// Research domain taxonomy.
+// Example: Field = "Computer Science", Subfield = "Machine Learning"
+// ============================================================
+
+model fields {
+  id          String      @id @default(uuid())
+  name        String      @unique
+  description String?
+
+  subfields   subfields[]
+  researcherFields researcher_fields[]
+  applicableProblems  problem_applicable_fields[]
+}
+
+model subfields {
+  id          String    @id @default(uuid())
+  fieldId     String
+  name        String
+  description String?
+
+  field       fields    @relation(fields: [fieldId], references: [id])
+  problems    problems[]
+}
+
+// Junction table — many researchers can have many fields
+// Django equivalent: ManyToManyField
+model researcher_fields {
+  researcherId  String
+  fieldId       String
+
+  // composite primary key — combination of both IDs is unique
+  // Django equivalent: unique_together = [['researcher', 'field']]
+  @@id([researcherId, fieldId])
+
+  researcher    researchers @relation(fields: [researcherId], references: [userId])
+  field         fields      @relation(fields: [fieldId], references: [id])
+}
+
+// ============================================================
+// PROBLEMS
+// The Problem Dashboard — core feature of ResearchBD.
+// Real-world research problems that posts and works link to.
+// ============================================================
+model problems {
+  id               String       @id @default(uuid())
+  subfieldId       String
+  title            String
+  description      String
+  detailedContent  String?
+  // long Wikipedia-style description shown on the problem page
+  impact           String?
+  // who is affected and how badly
+  currentProgress  String?
+  // what research has been done so far
+  whatHasBeenTried String?
+  // approaches attempted, what worked, what didn't
+  coverImageUrl    String?
+  // high quality hero image for the problem page
+  thumbnailUrl     String?
+  // small image for the scrollable mini cards in feed
+  urgencyLevel     UrgencyLevel
+  country          String?
+  isActive         Boolean      @default(true)
+  searchVector     String?
+
+  subfield         subfields    @relation(fields: [subfieldId], references: [id])
+  posts            posts[]
+  applicableFields  problem_applicable_fields[]
+}
+// ============================================================
+// POSTS
+// Base table for all four post types.
+// Each post type has its own extension table below.
+// This is a "table per type" pattern.
+// Django equivalent: multi-table inheritance
+// ============================================================
+
+model posts {
+  id          String    @id @default(uuid())
+  authorId    String
+  groupId     String?
+  // null means public post, not inside a group
+
+  postType    PostType
+  visibility  Visibility @default(public)
+  title       String
+  problemId   String?
+  // optional link to a Problem Dashboard page
+
+  isPinned    Boolean   @default(false)
+  // business rule: max 5 pinned posts per user
+
+  searchVector String?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  author      users     @relation(fields: [authorId], references: [id])
+  problem     problems? @relation(fields: [problemId], references: [id])
+  group       groups?   @relation(fields: [groupId], references: [id])
+
+  // extension tables — one post has at most one of these
+  collaborationPost     collaboration_posts?
+  helpPost              help_posts?
+  finishedWorkPost      finished_work_posts?
+  fundingOpportunityPost funding_opportunity_posts?
+
+  attachments   post_attachments[]
+  reactions     post_reactions[]
+  saves         post_saves[]
+  collabRequests collaboration_requests[]
+}
+
+// ============================================================
+// POST TYPE EXTENSION TABLES
+// Each stores fields specific to that post type.
+// postId is both PK and FK to posts table.
+// ============================================================
+
+model collaboration_posts {
+  postId              String  @id
+  problemStatement    String
+  domainDescription   String
+  proposedApproach    String
+  expectedOutcome     String
+  researchLevel       AcademicLevel
+  requiredExpertise   String
+  timeline            String?
+  maxCollaborators    Int?
+  freeExpression      String?
+  weightedUpvoteScore Float   @default(0)
+
+  post                posts   @relation(fields: [postId], references: [id])
+}
+
+model help_posts {
+  postId                  String  @id
+  problemSpecification    String
+  whereStuck              String
+  whatTried               String
+  minQualificationScore   Float   @default(0)
+  // business rule: researcher qualificationScore must be >= this value to respond
+  freeExpression          String?
+
+  post                    posts   @relation(fields: [postId], references: [id])
+}
+
+model finished_work_posts {
+  postId            String    @id
+  methodology       String
+  keyFindings       String
+  futureScope       String?
+  paperUrl          String?
+  githubUrl         String?
+  journalName       String?
+  publicationDate   DateTime?
+  freeExpression    String?
+  weightedUpvoteScore Float   @default(0)
+
+  post              posts     @relation(fields: [postId], references: [id])
+}
+
+model funding_opportunity_posts {
+  postId              String  @id
+  fundingAmountMin    Float?
+  fundingAmountMax    Float?
+  deliverables        String?
+  contactInfo         String
+  isArchived          Boolean @default(false)
+
+  post                posts   @relation(fields: [postId], references: [id])
+}
+
+// ============================================================
+// CONNECTIONS
+// Friend and follow system between researchers.
+// ============================================================
+
+model connections {
+  id              String            @id @default(uuid())
+  requesterId     String
+  receiverId      String
+  connectionType  ConnectionType
+  status          ConnectionStatus  @default(pending)
+
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  // two named relations because users appears twice in this model
+  // Django equivalent: two ForeignKey fields with related_name
+  requester       users             @relation("requester", fields: [requesterId], references: [id])
+  receiver        users             @relation("receiver", fields: [receiverId], references: [id])
+}
+
+// ============================================================
+// COLLABORATION REQUESTS
+// Sent when a researcher wants to join a collaboration post.
+// Business rule: accepting auto-creates a Group.
+// ============================================================
+
+model collaboration_requests {
+  id            String                @id @default(uuid())
+  researcherId  String
+  postId        String
+  status        CollabRequestStatus   @default(pending)
+  message       String?
+
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+
+  researcher    users                 @relation(fields: [researcherId], references: [id])
+  post          posts                 @relation(fields: [postId], references: [id])
+}
+
+// ============================================================
+// GROUPS
+// Auto-created when a collaboration request is accepted.
+// Also used for group messaging.
+// ============================================================
+
+model groups {
+  id                String    @id @default(uuid())
+  name              String
+  createdFromPostId String?
+  createdBy         String
+
+  createdAt         DateTime  @default(now())
+
+  members           group_members[]
+  posts             posts[]
+}
+
+model group_members {
+  groupId   String
+  userId    String
+  role      GroupRole   @default(member)
+  joinedAt  DateTime    @default(now())
+
+  @@id([groupId, userId])
+
+  group     groups      @relation(fields: [groupId], references: [id])
+  user      users       @relation(fields: [userId], references: [id])
+}
+
+// ============================================================
+// POST ATTACHMENTS
+// Files attached to posts — stored in Cloudinary or S3.
+// The fileUrl points to the external storage URL.
+// ============================================================
+
+model post_attachments {
+  id        Int     @id @default(autoincrement())
+  // autoincrement integer — fine for attachments, no need for UUID
+  postId    String
+  fileUrl   String
+  fileType  String
+
+  post      posts   @relation(fields: [postId], references: [id])
+}
+
+// ============================================================
+// POST REACTIONS AND SAVES
+// Composite primary keys — one reaction per user per post.
+// ============================================================
+
+model post_reactions {
+  userId        String
+  postId        String
+  reactionType  String
+
+  @@id([userId, postId])
+
+  user          users   @relation(fields: [userId], references: [id])
+  post          posts   @relation(fields: [postId], references: [id])
+}
+
+model post_saves {
+  userId    String
+  postId    String
+  savedAt   DateTime  @default(now())
+
+  @@id([userId, postId])
+
+  user      users     @relation(fields: [userId], references: [id])
+  post      posts     @relation(fields: [postId], references: [id])
+}
+model problem_applicable_fields {
+  problemId             String
+  fieldId               String
+
+  // Field-specific content — rendered when user selects this field as lens
+  // Example: "Flood" problem + "ML" field → how ML addresses flooding
+  howThisFieldHelps     String?
+  relevantTechniques    String?
+  openResearchQuestions String?
+
+  @@id([problemId, fieldId])
+
+  problem   problems  @relation(fields: [problemId], references: [id])
+  field     fields    @relation(fields: [fieldId], references: [id])
+}
