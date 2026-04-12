@@ -5,6 +5,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '../api/auth/[...nextauth]/route'
 import { FilterDataProvider } from '../../shared/providers/FilterDataProvider'
 import CreatePostButton from '../../modules/posts/components/CreatePostButton'
+import LogoutButton from '../../shared/components/LogoutButton'
+
 
 type PlatformLayoutProps = {
   children: ReactNode
@@ -67,7 +69,7 @@ export default async function PlatformLayout({ children }: PlatformLayoutProps) 
           <div className="sticky top-0 z-40 bg-black border-b border-zinc-800">
             <div className="flex items-center justify-between px-4 py-3 md:hidden">
               <span className="text-white font-black text-2xl tracking-tighter">RB</span>
-              <button className="text-white text-xl">•••</button>
+              <LogoutButton variant="mobile" />
             </div>
             <div className="flex">
               <Link href="/feed" className="flex-1 text-center py-3 text-sm font-semibold text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors border-b-2 border-transparent hover:border-white">
@@ -91,6 +93,9 @@ export default async function PlatformLayout({ children }: PlatformLayoutProps) 
 
         {/* Mobile: fixed circle "+" button */}
         <CreatePostButton accountType={accountType} variant="mobile" />
+
+        {/* Global Logout Button */}
+        <LogoutButton />
 
       </div>
     </FilterDataProvider>

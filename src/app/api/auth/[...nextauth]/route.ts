@@ -26,7 +26,7 @@ export const authOptions = {
         )
 
         if (!passwordMatch) return null
-        if (!user.isVerified) return null
+        // if (!user.isVerified) return null
 
         return {
           id: user.id,
