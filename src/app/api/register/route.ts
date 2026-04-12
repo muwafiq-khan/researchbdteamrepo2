@@ -1,53 +1,54 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { Prisma } from '@prisma/client'
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { email, password, displayName, orgName, accountType } = body
+    const { email, password, displayName, accountType, orgName } = body
 
     if (!email || !password || !displayName || !accountType) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      )
     }
 
-    // Check if user already exists
-    const existingUser = await prisma.users.findUnique({
+    const existing = await prisma.users.findUnique({
       where: { email }
     })
 
-    if (existingUser) {
-      return NextResponse.json({ error: 'Email already registered' }, { status: 400 })
+    if (existing) {
+      return NextResponse.json(
+        { error: 'Email already in use' },
+        { status: 400 }
+      )
     }
 
-    // Hash the password
     const passwordHash = await bcrypt.hash(password, 10)
 
-    // Create the user safely inside a transaction
-    const result = await prisma.$transaction(async (tx) => {
-      // 1. Create the base user
+    const result = await prisma.$transaction(async function(tx: Prisma.TransactionClient) {
       const user = await tx.users.create({
         data: {
           email,
           passwordHash,
           displayName,
           accountType,
+          isVerified: true,
         }
       })
 
-      // 2. Create the associated profile type
       if (accountType === 'researcher') {
         await tx.researchers.create({
-          data: {
-            userId: user.id
-          }
+          data: { userId: user.id }
         })
         await tx.researcher_qualifications.create({
-          data: {
-            researcherId: user.id
-          }
+          data: { researcherId: user.id }
         })
-      } else if (accountType === 'funding_agency') {
+      }
+
+      if (accountType === 'funding_agency') {
         await tx.funding_agencies.create({
           data: {
             userId: user.id,
@@ -60,10 +61,9 @@ export async function POST(req: Request) {
     })
 
     return NextResponse.json(
-      { message: 'User registered successfully', userId: result.id },
+      { message: 'User registered successfully', userId: result.id, success: true },
       { status: 201 }
     )
-
   } catch (error) {
     console.error('Registration API Error:', error)
     return NextResponse.json(
