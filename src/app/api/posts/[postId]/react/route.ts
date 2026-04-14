@@ -35,6 +35,26 @@ export async function POST(req: NextRequest, context: { params: Promise<{ postId
         reactionType: 'like',
       }
     })
+
+    // Notify post followers
+    const followers = await prisma.post_follows.findMany({
+      where: { postId }
+    })
+
+    const notificationsToCreate = followers
+      .filter((f: any) => f.userId !== userId)
+      .map((f: any) => ({
+        userId: f.userId,
+        type: 'REACTION',
+        sourceId: userId,
+        postId: postId,
+      }))
+
+    if (notificationsToCreate.length > 0) {
+      await prisma.notifications.createMany({
+        data: notificationsToCreate
+      })
+    }
   }
 
   const newCount = await prisma.post_reactions.count({

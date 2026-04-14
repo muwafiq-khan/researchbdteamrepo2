@@ -144,6 +144,9 @@ model users {
   groupMembers      group_members[]
   postReactions     post_reactions[]
   postSaves         post_saves[]
+  comments          post_comments[]
+  postFollows       post_follows[]
+  notifications     notifications[]
 }
 
 // ============================================================
@@ -348,6 +351,8 @@ model posts {
   reactions     post_reactions[]
   saves         post_saves[]
   collabRequests collaboration_requests[]
+  comments       post_comments[]
+  follows        post_follows[]
 }
 
 // ============================================================
@@ -538,3 +543,43 @@ model problem_applicable_fields {
   problem   problems  @relation(fields: [problemId], references: [id])
   field     fields    @relation(fields: [fieldId], references: [id])
 }
+
+model post_comments {
+  id        String   @id @default(uuid())
+  postId    String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  post      posts    @relation(fields: [postId], references: [id])
+  user      users    @relation(fields: [userId], references: [id])
+}
+
+// ============================================================
+// POST FOLLOWS AND NOTIFICATIONS
+// ============================================================
+
+model post_follows {
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  @@id([userId, postId])
+
+  user      users    @relation(fields: [userId], references: [id])
+  post      posts    @relation(fields: [postId], references: [id])
+}
+
+model notifications {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String
+  sourceId  String
+  postId    String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      users    @relation(fields: [userId], references: [id])
+}
+
