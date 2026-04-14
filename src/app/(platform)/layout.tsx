@@ -18,6 +18,16 @@ export default async function PlatformLayout({ children }: PlatformLayoutProps) 
   const session = await getServerSession(authOptions)
   const accountType = session?.user?.accountType ?? 'researcher'
 
+  let unreadCount = 0
+  if (session?.user?.id) {
+    unreadCount = await prisma.notifications.count({
+      where: {
+        userId: session.user.id,
+        read: false
+      }
+    })
+  }
+
   const fields = await prisma.fields.findMany({
     include: { subfields: true }
   })
@@ -50,7 +60,15 @@ export default async function PlatformLayout({ children }: PlatformLayoutProps) 
               <span>✉️</span> <span>Inbox</span>
             </Link>
             <Link href="/notifications" className="flex items-center gap-4 px-3 py-3 rounded-full hover:bg-zinc-900 transition-colors text-lg font-medium">
-              <span>🔔</span> <span>Notifications</span>
+              <div className="relative">
+                <span>🔔</span>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </div>
+              <span>Notifications</span>
             </Link>
             <Link href="/profile" className="flex items-center gap-4 px-3 py-3 rounded-full hover:bg-zinc-900 transition-colors text-lg font-medium">
               <span>👤</span> <span>Profile</span>
@@ -87,7 +105,14 @@ export default async function PlatformLayout({ children }: PlatformLayoutProps) 
           <Link href="/feed" className="flex flex-col items-center text-white text-xl">🏠</Link>
           <Link href="/search" className="flex flex-col items-center text-white text-xl">🔍</Link>
           <Link href="/messaging" className="flex flex-col items-center text-white text-xl">✉️</Link>
-          <Link href="/notifications" className="flex flex-col items-center text-white text-xl">🔔</Link>
+          <Link href="/notifications" className="relative flex flex-col items-center text-white text-xl">
+            🔔
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
+          </Link>
           <Link href="/profile" className="flex flex-col items-center text-white text-xl">👤</Link>
         </nav>
 

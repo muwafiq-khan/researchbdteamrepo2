@@ -3,16 +3,20 @@
 // Contains LikeButton (Client Component) nested inside it
 
 import LikeButton from './LikeButton'
+import FeedCommentSystem from './FeedCommentSystem'
+import FeedFollowButton from './FeedFollowButton'
 
 type PostCardProps = {
   id: string
   title: string
   postType: string
   authorName: string
-  authorAvatar: string
+  authorAvatar: string | null | undefined
   createdAt: string
   likeCount: number
   initialLiked: boolean
+  commentCount: number
+  initialFollowed: boolean
 }
 
 export default function PostCard({
@@ -24,6 +28,8 @@ export default function PostCard({
   createdAt,
   likeCount,
   initialLiked,
+  commentCount,
+  initialFollowed,
 }: PostCardProps) {
 
   const postTypeColors: Record<string, string> = {
@@ -39,11 +45,17 @@ export default function PostCard({
     <div className="w-full border border-zinc-800 bg-zinc-900 rounded-lg p-4">
 
       <div className="flex items-center gap-3 mb-3">
-        <img
-          src={authorAvatar}
-          alt={authorName}
-          className="w-10 h-10 rounded-full object-cover"
-        />
+        {authorAvatar ? (
+          <img
+            src={authorAvatar}
+            alt={authorName}
+            className="w-10 h-10 rounded-full object-cover"
+          />
+        ) : (
+          <div className="w-10 h-10 rounded-full bg-zinc-700 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+            {authorName?.charAt(0)?.toUpperCase() ?? '?'}
+          </div>
+        )}
         <span className="font-semibold text-white">{authorName}</span>
       </div>
 
@@ -53,7 +65,7 @@ export default function PostCard({
 
       <h2 className="text-lg font-bold text-white mt-2 mb-1">{title}</h2>
 
-      <div className="flex items-center justify-between mt-3">
+      <div className="flex items-center justify-between mt-3 mb-3">
         <span className="text-sm text-gray-400">{createdAt}</span>
         <a
           href={`/posts/${id}`}
@@ -63,14 +75,19 @@ export default function PostCard({
         </a>
       </div>
 
-      {/* LikeButton is a Client Component nested inside this Server Component */}
-      {/* Server Component passes postId and likeCount as props to it */}
-      {/* This is the correct Next.js nesting pattern */}
-      <div className="mt-3 pt-3 border-t border-gray-100">
+      <div className="mt-3 pt-3 border-t border-zinc-800 flex items-center gap-4 flex-wrap">
         <LikeButton
           postId={id}
           initialCount={likeCount}
           initialLiked={initialLiked}
+        />
+        <FeedCommentSystem
+          postId={id}
+          initialCount={commentCount}
+        />
+        <FeedFollowButton
+          postId={id}
+          initialFollowed={initialFollowed}
         />
       </div>
 
