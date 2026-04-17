@@ -147,6 +147,8 @@ model users {
   comments          post_comments[]
   postFollows       post_follows[]
   notifications     notifications[]
+  sentMessages      direct_messages[]  @relation("sent_messages")
+  receivedMessages  direct_messages[]  @relation("received_messages")
 }
 
 // ============================================================
@@ -581,5 +583,21 @@ model notifications {
   createdAt DateTime @default(now())
 
   user      users    @relation(fields: [userId], references: [id])
+}
+
+// ============================================================
+// DIRECT MESSAGES
+// ============================================================
+
+model direct_messages {
+  id          String   @id @default(uuid())
+  senderId    String
+  receiverId  String
+  content     String
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  sender      users    @relation("sent_messages", fields: [senderId], references: [id])
+  receiver    users    @relation("received_messages", fields: [receiverId], references: [id])
 }
 

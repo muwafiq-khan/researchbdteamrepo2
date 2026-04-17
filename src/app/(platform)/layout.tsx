@@ -56,6 +56,9 @@ export default async function PlatformLayout({ children }: PlatformLayoutProps) 
             <Link href="/search" className="flex items-center gap-4 px-3 py-3 rounded-full hover:bg-zinc-900 transition-colors text-lg font-medium">
               <span>🔍</span> <span>Search</span>
             </Link>
+            <Link href="/acquaintances" className="flex items-center gap-4 px-3 py-3 rounded-full hover:bg-zinc-900 transition-colors text-lg font-medium">
+              <span>🤝</span> <span>Acquaintances</span>
+            </Link>
             <Link href="/messaging" className="flex items-center gap-4 px-3 py-3 rounded-full hover:bg-zinc-900 transition-colors text-lg font-medium">
               <span>✉️</span> <span>Inbox</span>
             </Link>
@@ -104,6 +107,7 @@ export default async function PlatformLayout({ children }: PlatformLayoutProps) 
         <nav className="fixed bottom-0 left-0 right-0 bg-black border-t border-zinc-800 flex justify-around items-center py-3 md:hidden z-50">
           <Link href="/feed" className="flex flex-col items-center text-white text-xl">🏠</Link>
           <Link href="/search" className="flex flex-col items-center text-white text-xl">🔍</Link>
+          <Link href="/acquaintances" className="flex flex-col items-center text-white text-xl">🤝</Link>
           <Link href="/messaging" className="flex flex-col items-center text-white text-xl">✉️</Link>
           <Link href="/notifications" className="relative flex flex-col items-center text-white text-xl">
             🔔
