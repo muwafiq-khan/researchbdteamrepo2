@@ -6,6 +6,7 @@ import { authOptions } from '../../../api/auth/[...nextauth]/route'
 import PostDetails from '../../../../modules/posts/components/PostDetails'
 import CommentSystem from '../../../../modules/posts/components/CommentSystem'
 import LikeButton from '../../../../modules/posts/components/LikeButton'
+import RelatedContentSidebar from '../../../../shared/components/RelatedContentSidebar'
 
 type PageProps = {
   params: Promise<{ postId: string }>
@@ -69,14 +70,68 @@ export default async function PostViewPage({ params }: PageProps) {
     createdAt: c.createdAt.toISOString()
   }))
 
+  let relevantPosts: any[] = []
+  let fundingOpportunities: any[] = []
+  let researchers: any[] = []
+
+  if (post.problemId) {
+    relevantPosts = await prisma.posts.findMany({
+      where: {
+        problemId: post.problemId,
+        id: { not: post.id },
+        postType: { not: 'funding_opportunity' },
+        visibility: 'public'
+      },
+      take: 5,
+      select: {
+        id: true,
+        title: true,
+        postType: true,
+        author: { select: { displayName: true, avatarUrl: true } }
+      }
+    })
+
+    fundingOpportunities = await prisma.posts.findMany({
+      where: {
+        problemId: post.problemId,
+        id: { not: post.id },
+        postType: 'funding_opportunity',
+        visibility: 'public'
+      },
+      take: 3,
+      select: {
+        id: true,
+        title: true,
+        postType: true,
+        author: { select: { displayName: true, avatarUrl: true } }
+      }
+    })
+
+    const postsInProblem = await prisma.posts.findMany({
+      where: { problemId: post.problemId, visibility: 'public' },
+      select: { author: { select: { id: true, displayName: true, avatarUrl: true } } }
+    })
+
+    const authorMap = new Map()
+    for (const p of postsInProblem) {
+      if (!authorMap.has(p.author.id)) {
+        authorMap.set(p.author.id, p.author)
+      }
+    }
+    researchers = Array.from(authorMap.values()).slice(0, 5)
+  }
+
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-7xl mx-auto px-4 py-8">
       <Link 
         href="/feed" 
         className="inline-flex items-center text-zinc-400 hover:text-white mb-8 transition-colors"
       >
         <span className="mr-2">←</span> Back to Feed
       </Link>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
 
       <div className="flex items-center gap-4 mb-6">
         <img
@@ -140,6 +195,16 @@ export default async function PostViewPage({ params }: PageProps) {
         initialComments={comments}
         currentUserId={currentUserId}
       />
+        </div>
+        
+        <div>
+          <RelatedContentSidebar 
+            relevantPosts={relevantPosts}
+            researchers={researchers}
+            fundingOpportunities={fundingOpportunities}
+          />
+        </div>
+      </div>
     </div>
   )
 }

@@ -9,6 +9,7 @@
 
 import { notFound } from 'next/navigation'
 import { prisma } from '../../../../lib/prisma'
+import RelatedContentSidebar from '../../../../shared/components/RelatedContentSidebar'
 
 // ── Urgency helpers ───────────────────────────────────────────────
 // Django equivalent: a model method like problem.get_urgency_color()
@@ -84,6 +85,49 @@ export default async function ProblemDetailPage(
   if (!problem) {
     notFound()
   }
+
+  const relevantPosts = await prisma.posts.findMany({
+    where: {
+      problemId: problemId,
+      postType: { not: 'funding_opportunity' },
+      visibility: 'public'
+    },
+    take: 5,
+    select: {
+      id: true,
+      title: true,
+      postType: true,
+      author: { select: { displayName: true, avatarUrl: true } }
+    }
+  })
+
+  const fundingOpportunities = await prisma.posts.findMany({
+    where: {
+      problemId: problemId,
+      postType: 'funding_opportunity',
+      visibility: 'public'
+    },
+    take: 3,
+    select: {
+      id: true,
+      title: true,
+      postType: true,
+      author: { select: { displayName: true, avatarUrl: true } }
+    }
+  })
+
+  const postsInProblem = await prisma.posts.findMany({
+    where: { problemId: problemId, visibility: 'public' },
+    select: { author: { select: { id: true, displayName: true, avatarUrl: true } } }
+  })
+
+  const authorMap = new Map()
+  for (const p of postsInProblem) {
+    if (!authorMap.has(p.author.id)) {
+      authorMap.set(p.author.id, p.author)
+    }
+  }
+  const researchers = Array.from(authorMap.values()).slice(0, 5)
 
   return (
     <div className="flex justify-center">
@@ -208,20 +252,14 @@ export default async function ProblemDetailPage(
             </section>
           )}
 
-          {/* ── PLACEHOLDER SECTIONS ───────────────────────── */}
-          <section className="border border-zinc-800 rounded-lg p-6">
-            <h2 className="text-lg font-semibold text-white mb-2">Related Posts</h2>
-            <p className="text-zinc-500 text-sm">
-              Posts linked to this problem will appear here once post creation is built.
-            </p>
-          </section>
-
-          <section className="border border-zinc-800 rounded-lg p-6 mb-8">
-            <h2 className="text-lg font-semibold text-white mb-2">Researchers Working on This</h2>
-            <p className="text-zinc-500 text-sm">
-              Researchers active in this problem area will appear here.
-            </p>
-          </section>
+          {/* ── RELATED CONTENT SIDEBAR ───────────────────────── */}
+          <div className="pt-8 mb-8 border-t border-zinc-800">
+            <RelatedContentSidebar 
+              relevantPosts={relevantPosts}
+              researchers={researchers}
+              fundingOpportunities={fundingOpportunities}
+            />
+          </div>
 
         </div>
 
