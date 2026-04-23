@@ -7,10 +7,10 @@ async function main() {
   // ===== USERS =====
   const rahim = await prisma.users.upsert({
     where: { email: 'rahim@test.com' },
-    update: { passwordHash: '$2b$10$U.Ty.u5IbB7VprQ0Pv8xJ.AgtfHt5fdpA.uvf7FqYWA4OPftqnsQq', isVerified: true },
+    update: { passwordHash: '$2b$10$C.mFI.aFsB/C1GPpaNGg2Oo0cCEATfmgHr7sjtmPpv4pMlSne4N5q', isVerified: true },
     create: {
       email: 'rahim@test.com',
-      passwordHash: '$2b$10$U.Ty.u5IbB7VprQ0Pv8xJ.AgtfHt5fdpA.uvf7FqYWA4OPftqnsQq',
+      passwordHash: '$2b$10$C.mFI.aFsB/C1GPpaNGg2Oo0cCEATfmgHr7sjtmPpv4pMlSne4N5q',
       accountType: 'researcher',
       displayName: 'Dr. Rahim Uddin',
       avatarUrl: 'https://i.pravatar.cc/150?img=1',
@@ -23,7 +23,7 @@ async function main() {
     update: {},
     create: {
       email: 'nusrat@test.com',
-      passwordHash: 'placeholder',
+      passwordHash: '$2b$10$C.mFI.aFsB/C1GPpaNGg2Oo0cCEATfmgHr7sjtmPpv4pMlSne4N5q',
       accountType: 'researcher',
       displayName: 'Nusrat Jahan',
       avatarUrl: 'https://i.pravatar.cc/150?img=2',
@@ -36,7 +36,7 @@ async function main() {
     update: {},
     create: {
       email: 'kamal@test.com',
-      passwordHash: 'placeholder',
+      passwordHash: '$2b$10$C.mFI.aFsB/C1GPpaNGg2Oo0cCEATfmgHr7sjtmPpv4pMlSne4N5q',
       accountType: 'researcher',
       displayName: 'Prof. Kamal Hossain',
       avatarUrl: 'https://i.pravatar.cc/150?img=3',
@@ -49,7 +49,7 @@ async function main() {
     update: {},
     create: {
       email: 'greenbd@test.com',
-      passwordHash: 'placeholder',
+      passwordHash: '$2b$10$C.mFI.aFsB/C1GPpaNGg2Oo0cCEATfmgHr7sjtmPpv4pMlSne4N5q',
       accountType: 'funding_agency',
       displayName: 'GreenBD Foundation',
       avatarUrl: 'https://i.pravatar.cc/150?img=4',
@@ -303,6 +303,59 @@ async function main() {
         openResearchQuestions: 'Can ML models predict arsenic concentration from geological features alone, eliminating the need for chemical testing of every well?',
       },
     ]
+  })
+
+  // ===== CONNECTIONS =====
+  // Create some accepted connections so users have acquaintances to evaluate
+  await prisma.connections.createMany({
+    skipDuplicates: true,
+    data: [
+      {
+        requesterId: rahim.id,
+        receiverId: nusrat.id,
+        connectionType: 'friend',
+        status: 'accepted'
+      },
+      {
+        requesterId: kamal.id,
+        receiverId: rahim.id,
+        connectionType: 'friend',
+        status: 'accepted'
+      }
+    ]
+  })
+
+  // ===== COLLABORATION GROUP FOR FINISHED WORK =====
+  // Create a group and add Rahim and Nusrat so they can evaluate each other
+  const collabGroup = await prisma.groups.create({
+    data: {
+      name: 'Climate Change Impact Study Team',
+      createdBy: rahim.id,
+      members: {
+        create: [
+          { userId: rahim.id, role: 'admin' },
+          { userId: nusrat.id, role: 'member' }
+        ]
+      }
+    }
+  })
+
+  // Create a finished_work post for this group
+  const groupFinishedPost = await prisma.posts.create({
+    data: {
+      authorId: rahim.id,
+      groupId: collabGroup.id,
+      postType: 'finished_work',
+      title: 'Final Report: Climate Change Impact Study in Coastal Regions',
+      visibility: 'public',
+      finishedWorkPost: {
+        create: {
+          methodology: 'Mixed methods approach combining satellite imagery and local surveys.',
+          keyFindings: 'Coastal erosion has accelerated by 15% in the last decade.',
+          futureScope: 'Expand study to include inland salinity effects.'
+        }
+      }
+    }
   })
 
   console.log('Seed complete!')

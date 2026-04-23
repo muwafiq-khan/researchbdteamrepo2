@@ -69,13 +69,30 @@ export default async function AcquaintancesPage() {
     }
   })
 
+  const acquaintancesWithEval = await Promise.all(acquaintances.map(async (acq) => {
+    const sharedGroup = await prisma.groups.findFirst({
+      where: {
+        AND: [
+          { members: { some: { userId: userId } } },
+          { members: { some: { userId: acq.user.id } } },
+          { posts: { some: { postType: 'finished_work' } } }
+        ]
+      }
+    })
+
+    return {
+      ...acq,
+      canEvaluate: !!sharedGroup
+    }
+  }))
+
   return (
     <div className="py-8 px-4 flex flex-col gap-8 max-w-4xl mx-auto w-full">
       <h1 className="text-3xl font-black text-white tracking-tighter">Acquaintances</h1>
       <AcquaintancesClient 
         initialIncoming={incomingRequests}
         initialOutgoing={outgoingRequests}
-        initialAcquaintances={acquaintances}
+        initialAcquaintances={acquaintancesWithEval}
       />
     </div>
   )

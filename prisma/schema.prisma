@@ -149,6 +149,8 @@ model users {
   notifications     notifications[]
   sentMessages      direct_messages[]  @relation("sent_messages")
   receivedMessages  direct_messages[]  @relation("received_messages")
+  givenEvaluations    researcher_evaluations[] @relation("given_evaluations")
+  receivedEvaluations researcher_evaluations[] @relation("received_evaluations")
 }
 
 // ============================================================
@@ -436,6 +438,8 @@ model connections {
   // Django equivalent: two ForeignKey fields with related_name
   requester       users             @relation("requester", fields: [requesterId], references: [id])
   receiver        users             @relation("receiver", fields: [receiverId], references: [id])
+
+  @@unique([requesterId, receiverId, connectionType])
 }
 
 // ============================================================
@@ -600,4 +604,33 @@ model direct_messages {
   sender      users    @relation("sent_messages", fields: [senderId], references: [id])
   receiver    users    @relation("received_messages", fields: [receiverId], references: [id])
 }
+
+// ============================================================
+// RESEARCHER EVALUATIONS
+// ============================================================
+
+model researcher_evaluations {
+  id                  String   @id @default(uuid())
+  evaluatorId         String
+  evaluateeId         String
+  punctualityScore    Int      @default(0)
+  dedicationScore     Int      @default(0)
+  collaborationScore  Int      @default(0)
+  integrityScore      Int      @default(0)
+  analyticalScore     Int      @default(0)
+  inquisitivenessScore Int     @default(0)
+  adaptabilityScore   Int      @default(0)
+  responsivenessScore Int      @default(0)
+  openMindednessScore Int      @default(0)
+  feedback            String?
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  evaluator           users    @relation("given_evaluations", fields: [evaluatorId], references: [id])
+  evaluatee           users    @relation("received_evaluations", fields: [evaluateeId], references: [id])
+
+  @@unique([evaluatorId, evaluateeId])
+}
+
 

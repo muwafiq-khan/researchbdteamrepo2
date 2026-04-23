@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import EvaluationModal from '@/components/EvaluationModal'
 
 type UserInfo = {
   id: string
@@ -13,6 +14,7 @@ type UserInfo = {
 type ConnectionItem = {
   connectionId: string
   user: UserInfo
+  canEvaluate?: boolean
 }
 
 type SearchResultUser = UserInfo & {
@@ -31,6 +33,7 @@ export default function AcquaintancesClient({ initialIncoming, initialOutgoing, 
   const [searchResults, setSearchResults] = useState<SearchResultUser[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [loadingActionId, setLoadingActionId] = useState<string | null>(null)
+  const [evaluateUser, setEvaluateUser] = useState<{id: string, name: string} | null>(null)
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -244,7 +247,7 @@ export default function AcquaintancesClient({ initialIncoming, initialOutgoing, 
           </div>
         ) : (
           <div className="flex flex-col gap-4">
-            {initialAcquaintances.map(({ user }) => (
+            {initialAcquaintances.map(({ user, canEvaluate }) => (
               <div key={user.id} className="flex flex-col p-5 bg-zinc-950 border border-zinc-800 rounded-xl group hover:border-zinc-700 transition-colors">
                 <div className="flex items-center gap-4 mb-4">
                   {user.avatarUrl ? (
@@ -259,23 +262,35 @@ export default function AcquaintancesClient({ initialIncoming, initialOutgoing, 
                     <span className="text-zinc-500 text-xs truncate block">{user.email}</span>
                   </div>
                 </div>
-                
-                <button 
-                  onClick={() => handleAction('remove', user.id)}
-                  disabled={loadingActionId === user.id}
-                  className="w-full bg-zinc-900 border border-zinc-800 hover:bg-red-600/10 hover:text-red-500 hover:border-red-600/30 text-zinc-400 py-2 rounded-lg text-sm font-semibold transition-all opacity-0 group-hover:opacity-100 disabled:opacity-50"
-                  style={{
-                    opacity: loadingActionId === user.id ? 1 : undefined
-                  }}
-                >
-                  {loadingActionId === user.id ? 'Removing...' : 'Remove Acquaintance'}
-                </button>
+                <div className="flex gap-2 w-full mt-2 opacity-0 group-hover:opacity-100 transition-opacity" style={{ opacity: loadingActionId === user.id ? 1 : undefined }}>
+                  {canEvaluate && (
+                    <button 
+                      onClick={() => setEvaluateUser({ id: user.id, name: user.displayName })}
+                      className="flex-1 bg-zinc-900 border border-zinc-800 hover:bg-blue-600/10 hover:text-blue-500 hover:border-blue-600/30 text-zinc-400 py-2 rounded-lg text-sm font-semibold transition-all"
+                    >
+                      Evaluate
+                    </button>
+                  )}
+                  <button 
+                    onClick={() => handleAction('remove', user.id)}
+                    disabled={loadingActionId === user.id}
+                    className="flex-1 bg-zinc-900 border border-zinc-800 hover:bg-red-600/10 hover:text-red-500 hover:border-red-600/30 text-zinc-400 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-50"
+                  >
+                    {loadingActionId === user.id ? 'Removing...' : 'Remove'}
+                  </button>
+                </div>
               </div>
             ))}
           </div>
         )}
       </section>
 
+      <EvaluationModal 
+        isOpen={!!evaluateUser} 
+        onClose={() => setEvaluateUser(null)} 
+        evaluateeId={evaluateUser?.id || ''} 
+        evaluateeName={evaluateUser?.name || ''} 
+      />
     </div>
   )
 }
