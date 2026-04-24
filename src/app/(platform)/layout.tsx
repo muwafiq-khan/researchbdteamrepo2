@@ -50,11 +50,11 @@ export default async function PlatformLayout({ children }: PlatformLayoutProps) 
             RB
           </Link>
           <nav className="flex flex-col gap-1 w-full flex-1">
+            <Link href="/profile" className="flex items-center gap-4 px-3 py-3 rounded-full hover:bg-zinc-900 transition-colors text-lg font-medium">
+              <span>👤</span> <span>Profile</span>
+            </Link>
             <Link href="/feed" className="flex items-center gap-4 px-3 py-3 rounded-full hover:bg-zinc-900 transition-colors text-lg font-medium">
               <span>🏠</span> <span>Feed</span>
-            </Link>
-            <Link href="/search" className="flex items-center gap-4 px-3 py-3 rounded-full hover:bg-zinc-900 transition-colors text-lg font-medium">
-              <span>🔍</span> <span>Search</span>
             </Link>
             <Link href="/acquaintances" className="flex items-center gap-4 px-3 py-3 rounded-full hover:bg-zinc-900 transition-colors text-lg font-medium">
               <span>🤝</span> <span>Acquaintances</span>
@@ -73,8 +73,8 @@ export default async function PlatformLayout({ children }: PlatformLayoutProps) 
               </div>
               <span>Notifications</span>
             </Link>
-            <Link href="/profile" className="flex items-center gap-4 px-3 py-3 rounded-full hover:bg-zinc-900 transition-colors text-lg font-medium">
-              <span>👤</span> <span>Profile</span>
+            <Link href="/paraphraser" className="flex items-center gap-4 px-3 py-3 rounded-full hover:bg-zinc-900 transition-colors text-lg font-medium">
+              <span>✍️</span> <span>Paraphraser</span>
             </Link>
           </nav>
           <div className="flex flex-col gap-1 w-full mb-4">
@@ -105,8 +105,8 @@ export default async function PlatformLayout({ children }: PlatformLayoutProps) 
         </main>
 
         <nav className="fixed bottom-0 left-0 right-0 bg-black border-t border-zinc-800 flex justify-around items-center py-3 md:hidden z-50">
+          <Link href="/profile" className="flex flex-col items-center text-white text-xl">👤</Link>
           <Link href="/feed" className="flex flex-col items-center text-white text-xl">🏠</Link>
-          <Link href="/search" className="flex flex-col items-center text-white text-xl">🔍</Link>
           <Link href="/acquaintances" className="flex flex-col items-center text-white text-xl">🤝</Link>
           <Link href="/messaging" className="flex flex-col items-center text-white text-xl">✉️</Link>
           <Link href="/notifications" className="relative flex flex-col items-center text-white text-xl">
@@ -117,7 +117,7 @@ export default async function PlatformLayout({ children }: PlatformLayoutProps) 
               </span>
             )}
           </Link>
-          <Link href="/profile" className="flex flex-col items-center text-white text-xl">👤</Link>
+          <Link href="/paraphraser" className="flex flex-col items-center text-white text-xl">✍️</Link>
         </nav>
 
         {/* Mobile: fixed circle "+" button */}

@@ -27,6 +27,9 @@ export async function GET(request: NextRequest) {
             id: {
               not: userId
             }
+          },
+          {
+            appearInSearch: true
           }
         ]
       },

@@ -4,7 +4,6 @@
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -95,9 +94,9 @@ model users {
   // UUID primary key — more secure than auto-increment integers
   // @default(uuid()) — Prisma generates a UUID automatically on creation
   // Django equivalent: id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-  id        String      @id @default(uuid())
+  id String @id @default(uuid())
 
-  email     String      @unique
+  email String @unique
   // @unique — no two users can have the same email
   // Django equivalent: email = models.EmailField(unique=True)
 
@@ -115,12 +114,15 @@ model users {
   // ? means optional — this field can be null
   // Django equivalent: avatar_url = models.URLField(null=True, blank=True)
 
-  isVerified  Boolean @default(false)
+  isVerified Boolean @default(false)
   // false until user clicks email verification link
   // Django equivalent: is_verified = models.BooleanField(default=False)
 
-  isActive    Boolean @default(true)
+  isActive Boolean @default(true)
   // false if account is banned or deactivated
+
+  profileVisibility Visibility @default(public)
+  appearInSearch    Boolean    @default(true)
 
   notificationPreferences Json @default("{}")
   // JSONB field — stores flexible notification settings
@@ -134,21 +136,21 @@ model users {
 
   // RELATIONS — these are not columns, they tell Prisma how tables connect
   // Django equivalent: reverse relations from ForeignKey fields
-  researcher        researchers?
-  fundingAgency     funding_agencies?
-  authTokens        auth_tokens[]
-  posts             posts[]
-  connections       connections[]       @relation("requester")
-  receivedConnections connections[]     @relation("receiver")
-  collabRequests    collaboration_requests[]
-  groupMembers      group_members[]
-  postReactions     post_reactions[]
-  postSaves         post_saves[]
-  comments          post_comments[]
-  postFollows       post_follows[]
-  notifications     notifications[]
-  sentMessages      direct_messages[]  @relation("sent_messages")
-  receivedMessages  direct_messages[]  @relation("received_messages")
+  researcher          researchers?
+  fundingAgency       funding_agencies?
+  authTokens          auth_tokens[]
+  posts               posts[]
+  connections         connections[]            @relation("requester")
+  receivedConnections connections[]            @relation("receiver")
+  collabRequests      collaboration_requests[]
+  groupMembers        group_members[]
+  postReactions       post_reactions[]
+  postSaves           post_saves[]
+  comments            post_comments[]
+  postFollows         post_follows[]
+  notifications       notifications[]
+  sentMessages        direct_messages[]        @relation("sent_messages")
+  receivedMessages    direct_messages[]        @relation("received_messages")
   givenEvaluations    researcher_evaluations[] @relation("given_evaluations")
   receivedEvaluations researcher_evaluations[] @relation("received_evaluations")
 }
@@ -164,22 +166,48 @@ model researchers {
   // userId is both the primary key AND a foreign key to users
   // @id — this is the primary key
   // @map("userId") — the actual column name in PostgreSQL is "userId"
-  userId      String      @id
+  userId String @id
 
-  institution String?
-  academicLevel AcademicLevel?
-  bio         String?
-  orcidId     String?
+  institution     String?
+  academicLevel   AcademicLevel?
+  bio             String?
+  orcidId         String?
   googleScholarId String?
 
   // RELATION — connects back to users table
   // fields: [userId] — the foreign key column in THIS table
   // references: [id] — the primary key column in the users table
   // Django equivalent: user = models.OneToOneField(User, on_delete=models.CASCADE)
-  user        users       @relation(fields: [userId], references: [id])
+  user users @relation(fields: [userId], references: [id])
 
-  qualification researcher_qualifications?
+  qualification  researcher_qualifications?
   researchFields researcher_fields[]
+  skills         String[]
+  publications   publications[]
+  institutions   institutions[]
+}
+
+model publications {
+  id                      String  @id @default(uuid())
+  researcherId            String
+  title                   String
+  journalOrConferenceName String
+  year                    Int
+  coAuthors               String?
+  linkOrDoi               String?
+
+  researcher researchers @relation(fields: [researcherId], references: [userId])
+}
+
+model institutions {
+  id              String    @id @default(uuid())
+  researcherId    String
+  institutionName String
+  rolePosition    String
+  startDate       DateTime
+  endDate         DateTime?
+
+  researcher researchers @relation(fields: [researcherId], references: [userId])
 }
 
 // ============================================================
@@ -189,19 +217,19 @@ model researchers {
 // ============================================================
 
 model researcher_qualifications {
-  researcherId    String  @id
+  researcherId String @id
 
-  hIndex          Int     @default(0)
-  citationCount   Int     @default(0)
-  publicationCount Int    @default(0)
-  starScore       Float   @default(0)
+  hIndex               Int   @default(0)
+  citationCount        Int   @default(0)
+  publicationCount     Int   @default(0)
+  starScore            Float @default(0)
   feedbackQualityScore Float @default(0)
-  contributionPoints Int  @default(0)
-  qualificationScore Float @default(0)
+  contributionPoints   Int   @default(0)
+  qualificationScore   Float @default(0)
   // qualificationScore is computed from all other fields
   // business rule: HelpPost minQualificationScore checked against this
 
-  researcher      researchers @relation(fields: [researcherId], references: [userId])
+  researcher researchers @relation(fields: [researcherId], references: [userId])
 }
 
 // ============================================================
@@ -210,14 +238,14 @@ model researcher_qualifications {
 // ============================================================
 
 model funding_agencies {
-  userId      String  @id
+  userId String @id
 
   orgName     String
   website     String?
   country     String?
   description String?
 
-  user        users   @relation(fields: [userId], references: [id])
+  user users @relation(fields: [userId], references: [id])
 }
 
 // ============================================================
@@ -230,16 +258,16 @@ model funding_agencies {
 // ============================================================
 
 model auth_tokens {
-  id          String        @id @default(uuid())
-  userId      String
-  tokenHash   String        @unique
-  tokenType   AuthTokenType
-  expiresAt   DateTime
-  usedAt      DateTime?
+  id        String        @id @default(uuid())
+  userId    String
+  tokenHash String        @unique
+  tokenType AuthTokenType
+  expiresAt DateTime
+  usedAt    DateTime?
   // null means not yet used
   // set to current timestamp when token is consumed
 
-  user        users         @relation(fields: [userId], references: [id])
+  user users @relation(fields: [userId], references: [id])
 }
 
 // ============================================================
@@ -249,37 +277,37 @@ model auth_tokens {
 // ============================================================
 
 model fields {
-  id          String      @id @default(uuid())
-  name        String      @unique
+  id          String  @id @default(uuid())
+  name        String  @unique
   description String?
 
-  subfields   subfields[]
-  researcherFields researcher_fields[]
-  applicableProblems  problem_applicable_fields[]
+  subfields          subfields[]
+  researcherFields   researcher_fields[]
+  applicableProblems problem_applicable_fields[]
 }
 
 model subfields {
-  id          String    @id @default(uuid())
+  id          String  @id @default(uuid())
   fieldId     String
   name        String
   description String?
 
-  field       fields    @relation(fields: [fieldId], references: [id])
-  problems    problems[]
+  field    fields     @relation(fields: [fieldId], references: [id])
+  problems problems[]
 }
 
 // Junction table — many researchers can have many fields
 // Django equivalent: ManyToManyField
 model researcher_fields {
-  researcherId  String
-  fieldId       String
+  researcherId String
+  fieldId      String
+
+  researcher researchers @relation(fields: [researcherId], references: [userId])
+  field      fields      @relation(fields: [fieldId], references: [id])
 
   // composite primary key — combination of both IDs is unique
   // Django equivalent: unique_together = [['researcher', 'field']]
   @@id([researcherId, fieldId])
-
-  researcher    researchers @relation(fields: [researcherId], references: [userId])
-  field         fields      @relation(fields: [fieldId], references: [id])
 }
 
 // ============================================================
@@ -309,10 +337,11 @@ model problems {
   isActive         Boolean      @default(true)
   searchVector     String?
 
-  subfield         subfields    @relation(fields: [subfieldId], references: [id])
+  subfield         subfields                   @relation(fields: [subfieldId], references: [id])
   posts            posts[]
-  applicableFields  problem_applicable_fields[]
+  applicableFields problem_applicable_fields[]
 }
+
 // ============================================================
 // POSTS
 // Base table for all four post types.
@@ -322,38 +351,38 @@ model problems {
 // ============================================================
 
 model posts {
-  id          String    @id @default(uuid())
-  authorId    String
-  groupId     String?
+  id       String  @id @default(uuid())
+  authorId String
+  groupId  String?
   // null means public post, not inside a group
 
-  postType    PostType
-  visibility  Visibility @default(public)
-  title       String
-  problemId   String?
+  postType   PostType
+  visibility Visibility @default(public)
+  title      String
+  problemId  String?
   // optional link to a Problem Dashboard page
 
-  isPinned    Boolean   @default(false)
+  isPinned Boolean @default(false)
   // business rule: max 5 pinned posts per user
 
   searchVector String?
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  author      users     @relation(fields: [authorId], references: [id])
-  problem     problems? @relation(fields: [problemId], references: [id])
-  group       groups?   @relation(fields: [groupId], references: [id])
+  author  users     @relation(fields: [authorId], references: [id])
+  problem problems? @relation(fields: [problemId], references: [id])
+  group   groups?   @relation(fields: [groupId], references: [id])
 
   // extension tables — one post has at most one of these
-  collaborationPost     collaboration_posts?
-  helpPost              help_posts?
-  finishedWorkPost      finished_work_posts?
+  collaborationPost      collaboration_posts?
+  helpPost               help_posts?
+  finishedWorkPost       finished_work_posts?
   fundingOpportunityPost funding_opportunity_posts?
 
-  attachments   post_attachments[]
-  reactions     post_reactions[]
-  saves         post_saves[]
+  attachments    post_attachments[]
+  reactions      post_reactions[]
+  saves          post_saves[]
   collabRequests collaboration_requests[]
   comments       post_comments[]
   follows        post_follows[]
@@ -366,7 +395,7 @@ model posts {
 // ============================================================
 
 model collaboration_posts {
-  postId              String  @id
+  postId              String        @id
   problemStatement    String
   domainDescription   String
   proposedApproach    String
@@ -376,47 +405,47 @@ model collaboration_posts {
   timeline            String?
   maxCollaborators    Int?
   freeExpression      String?
-  weightedUpvoteScore Float   @default(0)
+  weightedUpvoteScore Float         @default(0)
 
-  post                posts   @relation(fields: [postId], references: [id])
+  post posts @relation(fields: [postId], references: [id])
 }
 
 model help_posts {
-  postId                  String  @id
-  problemSpecification    String
-  whereStuck              String
-  whatTried               String
-  minQualificationScore   Float   @default(0)
+  postId                String  @id
+  problemSpecification  String
+  whereStuck            String
+  whatTried             String
+  minQualificationScore Float   @default(0)
   // business rule: researcher qualificationScore must be >= this value to respond
-  freeExpression          String?
+  freeExpression        String?
 
-  post                    posts   @relation(fields: [postId], references: [id])
+  post posts @relation(fields: [postId], references: [id])
 }
 
 model finished_work_posts {
-  postId            String    @id
-  methodology       String
-  keyFindings       String
-  futureScope       String?
-  paperUrl          String?
-  githubUrl         String?
-  journalName       String?
-  publicationDate   DateTime?
-  freeExpression    String?
-  weightedUpvoteScore Float   @default(0)
+  postId              String    @id
+  methodology         String
+  keyFindings         String
+  futureScope         String?
+  paperUrl            String?
+  githubUrl           String?
+  journalName         String?
+  publicationDate     DateTime?
+  freeExpression      String?
+  weightedUpvoteScore Float     @default(0)
 
-  post              posts     @relation(fields: [postId], references: [id])
+  post posts @relation(fields: [postId], references: [id])
 }
 
 model funding_opportunity_posts {
-  postId              String  @id
-  fundingAmountMin    Float?
-  fundingAmountMax    Float?
-  deliverables        String?
-  contactInfo         String
-  isArchived          Boolean @default(false)
+  postId           String  @id
+  fundingAmountMin Float?
+  fundingAmountMax Float?
+  deliverables     String?
+  contactInfo      String
+  isArchived       Boolean @default(false)
 
-  post                posts   @relation(fields: [postId], references: [id])
+  post posts @relation(fields: [postId], references: [id])
 }
 
 // ============================================================
@@ -425,19 +454,19 @@ model funding_opportunity_posts {
 // ============================================================
 
 model connections {
-  id              String            @id @default(uuid())
-  requesterId     String
-  receiverId      String
-  connectionType  ConnectionType
-  status          ConnectionStatus  @default(pending)
+  id             String           @id @default(uuid())
+  requesterId    String
+  receiverId     String
+  connectionType ConnectionType
+  status         ConnectionStatus @default(pending)
 
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // two named relations because users appears twice in this model
   // Django equivalent: two ForeignKey fields with related_name
-  requester       users             @relation("requester", fields: [requesterId], references: [id])
-  receiver        users             @relation("receiver", fields: [receiverId], references: [id])
+  requester users @relation("requester", fields: [requesterId], references: [id])
+  receiver  users @relation("receiver", fields: [receiverId], references: [id])
 
   @@unique([requesterId, receiverId, connectionType])
 }
@@ -449,17 +478,17 @@ model connections {
 // ============================================================
 
 model collaboration_requests {
-  id            String                @id @default(uuid())
-  researcherId  String
-  postId        String
-  status        CollabRequestStatus   @default(pending)
-  message       String?
+  id           String              @id @default(uuid())
+  researcherId String
+  postId       String
+  status       CollabRequestStatus @default(pending)
+  message      String?
 
-  createdAt     DateTime              @default(now())
-  updatedAt     DateTime              @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  researcher    users                 @relation(fields: [researcherId], references: [id])
-  post          posts                 @relation(fields: [postId], references: [id])
+  researcher users @relation(fields: [researcherId], references: [id])
+  post       posts @relation(fields: [postId], references: [id])
 }
 
 // ============================================================
@@ -469,27 +498,27 @@ model collaboration_requests {
 // ============================================================
 
 model groups {
-  id                String    @id @default(uuid())
+  id                String  @id @default(uuid())
   name              String
   createdFromPostId String?
   createdBy         String
 
-  createdAt         DateTime  @default(now())
+  createdAt DateTime @default(now())
 
-  members           group_members[]
-  posts             posts[]
+  members group_members[]
+  posts   posts[]
 }
 
 model group_members {
-  groupId   String
-  userId    String
-  role      GroupRole   @default(member)
-  joinedAt  DateTime    @default(now())
+  groupId  String
+  userId   String
+  role     GroupRole @default(member)
+  joinedAt DateTime  @default(now())
+
+  group groups @relation(fields: [groupId], references: [id])
+  user  users  @relation(fields: [userId], references: [id])
 
   @@id([groupId, userId])
-
-  group     groups      @relation(fields: [groupId], references: [id])
-  user      users       @relation(fields: [userId], references: [id])
 }
 
 // ============================================================
@@ -499,13 +528,13 @@ model group_members {
 // ============================================================
 
 model post_attachments {
-  id        Int     @id @default(autoincrement())
+  id       Int    @id @default(autoincrement())
   // autoincrement integer — fine for attachments, no need for UUID
-  postId    String
-  fileUrl   String
-  fileType  String
+  postId   String
+  fileUrl  String
+  fileType String
 
-  post      posts   @relation(fields: [postId], references: [id])
+  post posts @relation(fields: [postId], references: [id])
 }
 
 // ============================================================
@@ -514,29 +543,30 @@ model post_attachments {
 // ============================================================
 
 model post_reactions {
-  userId        String
-  postId        String
-  reactionType  String
+  userId       String
+  postId       String
+  reactionType String
+
+  user users @relation(fields: [userId], references: [id])
+  post posts @relation(fields: [postId], references: [id])
 
   @@id([userId, postId])
-
-  user          users   @relation(fields: [userId], references: [id])
-  post          posts   @relation(fields: [postId], references: [id])
 }
 
 model post_saves {
-  userId    String
-  postId    String
-  savedAt   DateTime  @default(now())
+  userId  String
+  postId  String
+  savedAt DateTime @default(now())
+
+  user users @relation(fields: [userId], references: [id])
+  post posts @relation(fields: [postId], references: [id])
 
   @@id([userId, postId])
-
-  user      users     @relation(fields: [userId], references: [id])
-  post      posts     @relation(fields: [postId], references: [id])
 }
+
 model problem_applicable_fields {
-  problemId             String
-  fieldId               String
+  problemId String
+  fieldId   String
 
   // Field-specific content — rendered when user selects this field as lens
   // Example: "Flood" problem + "ML" field → how ML addresses flooding
@@ -544,11 +574,12 @@ model problem_applicable_fields {
   relevantTechniques    String?
   openResearchQuestions String?
 
-  @@id([problemId, fieldId])
+  problem problems @relation(fields: [problemId], references: [id])
+  field   fields   @relation(fields: [fieldId], references: [id])
 
-  problem   problems  @relation(fields: [problemId], references: [id])
-  field     fields    @relation(fields: [fieldId], references: [id])
+  @@id([problemId, fieldId])
 }
+
 model post_comments {
   id         String   @id @default(uuid())
   postId     String
@@ -563,11 +594,12 @@ model post_comments {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  post      posts          @relation(fields: [postId], references: [id])
-  user      users          @relation(fields: [userId], references: [id])
-  parent    post_comments? @relation("CommentReplies", fields: [parentId], references: [id])
-  children  post_comments[] @relation("CommentReplies")
+  post     posts           @relation(fields: [postId], references: [id])
+  user     users           @relation(fields: [userId], references: [id])
+  parent   post_comments?  @relation("CommentReplies", fields: [parentId], references: [id])
+  children post_comments[] @relation("CommentReplies")
 }
+
 // ============================================================
 // POST FOLLOWS AND NOTIFICATIONS
 // ============================================================
@@ -577,10 +609,10 @@ model post_follows {
   postId    String
   createdAt DateTime @default(now())
 
-  @@id([userId, postId])
+  user users @relation(fields: [userId], references: [id])
+  post posts @relation(fields: [postId], references: [id])
 
-  user      users    @relation(fields: [userId], references: [id])
-  post      posts    @relation(fields: [postId], references: [id])
+  @@id([userId, postId])
 }
 
 model notifications {
@@ -592,7 +624,7 @@ model notifications {
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  user      users    @relation(fields: [userId], references: [id])
+  user users @relation(fields: [userId], references: [id])
 }
 
 // ============================================================
@@ -600,15 +632,15 @@ model notifications {
 // ============================================================
 
 model direct_messages {
-  id          String   @id @default(uuid())
-  senderId    String
-  receiverId  String
-  content     String
-  isRead      Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  id         String   @id @default(uuid())
+  senderId   String
+  receiverId String
+  content    String
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
 
-  sender      users    @relation("sent_messages", fields: [senderId], references: [id])
-  receiver    users    @relation("received_messages", fields: [receiverId], references: [id])
+  sender   users @relation("sent_messages", fields: [senderId], references: [id])
+  receiver users @relation("received_messages", fields: [receiverId], references: [id])
 }
 
 // ============================================================
@@ -616,27 +648,25 @@ model direct_messages {
 // ============================================================
 
 model researcher_evaluations {
-  id                  String   @id @default(uuid())
-  evaluatorId         String
-  evaluateeId         String
-  punctualityScore    Int      @default(0)
-  dedicationScore     Int      @default(0)
-  collaborationScore  Int      @default(0)
-  integrityScore      Int      @default(0)
-  analyticalScore     Int      @default(0)
+  id                   String  @id @default(uuid())
+  evaluatorId          String
+  evaluateeId          String
+  punctualityScore     Int     @default(0)
+  dedicationScore      Int     @default(0)
+  collaborationScore   Int     @default(0)
+  integrityScore       Int     @default(0)
+  analyticalScore      Int     @default(0)
   inquisitivenessScore Int     @default(0)
-  adaptabilityScore   Int      @default(0)
-  responsivenessScore Int      @default(0)
-  openMindednessScore Int      @default(0)
-  feedback            String?
+  adaptabilityScore    Int     @default(0)
+  responsivenessScore  Int     @default(0)
+  openMindednessScore  Int     @default(0)
+  feedback             String?
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  evaluator           users    @relation("given_evaluations", fields: [evaluatorId], references: [id])
-  evaluatee           users    @relation("received_evaluations", fields: [evaluateeId], references: [id])
+  evaluator users @relation("given_evaluations", fields: [evaluatorId], references: [id])
+  evaluatee users @relation("received_evaluations", fields: [evaluateeId], references: [id])
 
   @@unique([evaluatorId, evaluateeId])
 }
-
-
