@@ -549,19 +549,25 @@ model problem_applicable_fields {
   problem   problems  @relation(fields: [problemId], references: [id])
   field     fields    @relation(fields: [fieldId], references: [id])
 }
-
 model post_comments {
-  id        String   @id @default(uuid())
-  postId    String
-  userId    String
-  content   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(uuid())
+  postId     String
+  userId     String
+  parentId   String?
+  depth      Int      @default(0)
+  content    String
+  isEdited   Boolean  @default(false)
+  isDeleted  Boolean  @default(false)
+  likeCount  Int      @default(0)
+  replyCount Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  post      posts    @relation(fields: [postId], references: [id])
-  user      users    @relation(fields: [userId], references: [id])
+  post      posts          @relation(fields: [postId], references: [id])
+  user      users          @relation(fields: [userId], references: [id])
+  parent    post_comments? @relation("CommentReplies", fields: [parentId], references: [id])
+  children  post_comments[] @relation("CommentReplies")
 }
-
 // ============================================================
 // POST FOLLOWS AND NOTIFICATIONS
 // ============================================================
@@ -633,4 +639,4 @@ model researcher_evaluations {
   @@unique([evaluatorId, evaluateeId])
 }
 
-
+

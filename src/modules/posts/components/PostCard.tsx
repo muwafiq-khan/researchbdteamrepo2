@@ -3,7 +3,7 @@
 // Contains LikeButton (Client Component) nested inside it
 
 import LikeButton from './LikeButton'
-import FeedCommentSystem from './FeedCommentSystem'
+import CommentSection from './CommentSection'
 import FeedFollowButton from './FeedFollowButton'
 
 type PostCardProps = {
@@ -81,10 +81,13 @@ export default function PostCard({
           initialCount={likeCount}
           initialLiked={initialLiked}
         />
-        <FeedCommentSystem
-          postId={id}
-          initialCount={commentCount}
+        <CommentSection
+              postId={id}
+              postTitle={title}
+              postAuthorName={authorName}
+              commentCount={commentCount}
         />
+        
         <FeedFollowButton
           postId={id}
           initialFollowed={initialFollowed}
