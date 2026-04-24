@@ -230,7 +230,6 @@ async function main() {
   await prisma.problem_applicable_fields.createMany({
     skipDuplicates: true,
     data: [
-      // ── Problem 001: Bengali NLP ──
       {
         problemId: problem001.id,
         fieldId: csField.id,
@@ -238,8 +237,6 @@ async function main() {
         relevantTechniques: 'Transfer learning, multilingual transformers (mBERT, XLM-R), data augmentation, active learning for annotation',
         openResearchQuestions: 'Can synthetic data generation close the gap for low-resource Bengali NLP? How do morphologically rich languages affect tokenizer design?',
       },
-
-      // ── Problem 002: Coastal erosion — 3 fields can help ──
       {
         problemId: problem002.id,
         fieldId: envField.id,
@@ -261,8 +258,6 @@ async function main() {
         relevantTechniques: 'Saline agriculture, floating garden cultivation, soil salinity mapping',
         openResearchQuestions: 'Can floating agriculture scale to feed displaced coastal populations?',
       },
-
-      // ── Problem 003: Rice yield stagnation ──
       {
         problemId: problem003.id,
         fieldId: agriField.id,
@@ -277,8 +272,6 @@ async function main() {
         relevantTechniques: 'Computer vision for crop stress detection, random forest yield prediction, IoT soil sensors',
         openResearchQuestions: 'Can low-cost smartphone-based crop monitoring replace expensive drone systems for smallholder farmers?',
       },
-
-      // ── Problem 004: Medical imaging AI ──
       {
         problemId: problem004.id,
         fieldId: csField.id,
@@ -286,8 +279,6 @@ async function main() {
         relevantTechniques: 'Transfer learning on medical images, federated learning, data augmentation for medical scans, explainable AI',
         openResearchQuestions: 'How much South Asian training data is needed to match Western-trained model accuracy? Can federated learning solve privacy concerns?',
       },
-
-      // ── Problem 005: Arsenic contamination ──
       {
         problemId: problem005.id,
         fieldId: envField.id,
@@ -306,27 +297,15 @@ async function main() {
   })
 
   // ===== CONNECTIONS =====
-  // Create some accepted connections so users have acquaintances to evaluate
   await prisma.connections.createMany({
     skipDuplicates: true,
     data: [
-      {
-        requesterId: rahim.id,
-        receiverId: nusrat.id,
-        connectionType: 'friend',
-        status: 'accepted'
-      },
-      {
-        requesterId: kamal.id,
-        receiverId: rahim.id,
-        connectionType: 'friend',
-        status: 'accepted'
-      }
+      { requesterId: rahim.id, receiverId: nusrat.id, connectionType: 'friend', status: 'accepted' },
+      { requesterId: kamal.id, receiverId: rahim.id, connectionType: 'friend', status: 'accepted' }
     ]
   })
 
-  // ===== COLLABORATION GROUP FOR FINISHED WORK =====
-  // Create a group and add Rahim and Nusrat so they can evaluate each other
+  // ===== COLLABORATION GROUP =====
   const collabGroup = await prisma.groups.create({
     data: {
       name: 'Climate Change Impact Study Team',
@@ -340,8 +319,7 @@ async function main() {
     }
   })
 
-  // Create a finished_work post for this group
-  const groupFinishedPost = await prisma.posts.create({
+  await prisma.posts.create({
     data: {
       authorId: rahim.id,
       groupId: collabGroup.id,
@@ -357,6 +335,101 @@ async function main() {
       }
     }
   })
+
+  // ===== THREADED COMMENTS =====
+  const firstPost = await prisma.posts.findFirst({
+    where: { authorId: rahim.id, postType: 'collaboration' }
+  })
+
+  if (firstPost) {
+    // Top-level comment 1 by Nusrat
+    const c1 = await prisma.post_comments.create({
+      data: {
+        postId: firstPost.id,
+        userId: nusrat.id,
+        depth: 0,
+        content: 'This is a really important area of research. Have you considered partnering with BUET for data collection?',
+        likeCount: 5,
+        replyCount: 2,
+      }
+    })
+
+    // Rahim replies to c1
+    const c1r1 = await prisma.post_comments.create({
+      data: {
+        postId: firstPost.id,
+        userId: rahim.id,
+        parentId: c1.id,
+        depth: 1,
+        content: 'Yes! We actually reached out to BUET last month. Waiting for their response. Great suggestion.',
+        likeCount: 3,
+        replyCount: 1,
+      }
+    })
+
+    // Kamal replies to Rahim's reply (depth 2 — triggers "View thread")
+    await prisma.post_comments.create({
+      data: {
+        postId: firstPost.id,
+        userId: kamal.id,
+        parentId: c1r1.id,
+        depth: 2,
+        content: 'I have a contact at BUET\'s CSE dept. I can connect you if needed.',
+        likeCount: 2,
+        replyCount: 0,
+      }
+    })
+
+    // Kamal also replies to c1 directly
+    await prisma.post_comments.create({
+      data: {
+        postId: firstPost.id,
+        userId: kamal.id,
+        parentId: c1.id,
+        depth: 1,
+        content: 'BUET has good remote sensing datasets too. Worth exploring.',
+        likeCount: 1,
+        replyCount: 0,
+      }
+    })
+
+    // Top-level comment 2 by Kamal
+    const c2 = await prisma.post_comments.create({
+      data: {
+        postId: firstPost.id,
+        userId: kamal.id,
+        depth: 0,
+        content: 'What is your expected timeline for the first phase? I may be able to contribute field data from my ongoing study.',
+        likeCount: 2,
+        replyCount: 1,
+      }
+    })
+
+    // Rahim replies to c2
+    await prisma.post_comments.create({
+      data: {
+        postId: firstPost.id,
+        userId: rahim.id,
+        parentId: c2.id,
+        depth: 1,
+        content: 'Phase 1 is 3 months. Your field data would be incredibly valuable — let\'s connect via messaging.',
+        likeCount: 1,
+        replyCount: 0,
+      }
+    })
+
+    // Top-level comment 3 by Rahim
+    await prisma.post_comments.create({
+      data: {
+        postId: firstPost.id,
+        userId: rahim.id,
+        depth: 0,
+        content: 'For anyone interested, we will be sharing our methodology document by end of this week.',
+        likeCount: 4,
+        replyCount: 0,
+      }
+    })
+  }
 
   console.log('Seed complete!')
 }
