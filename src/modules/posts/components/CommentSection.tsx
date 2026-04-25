@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 
 type CommentUser = { id: string; displayName: string; avatarUrl: string | null }
 
@@ -114,9 +115,19 @@ export default function CommentSection({ postId, postTitle, postAuthorName, comm
         {!isLoading && focusedComment && (
           <div className="p-4 border-b border-zinc-800 bg-zinc-900/30">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 rounded-full bg-zinc-700 shrink-0" />
+              <Link href={focusedComment.isDeleted ? '#' : `/profile/${focusedComment.user.id}`} className="hover:opacity-80 transition-opacity">
+                {focusedComment.isDeleted || !focusedComment.user.avatarUrl ? (
+                  <div className="w-8 h-8 rounded-full bg-zinc-700 shrink-0 flex items-center justify-center text-white text-xs font-bold">
+                    {!focusedComment.isDeleted && focusedComment.user.displayName.charAt(0).toUpperCase()}
+                  </div>
+                ) : (
+                  <img src={focusedComment.user.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
+                )}
+              </Link>
               <div>
-                <p className="text-white text-sm font-semibold">{focusedComment.isDeleted ? '[deleted]' : focusedComment.user.displayName}</p>
+                <Link href={focusedComment.isDeleted ? '#' : `/profile/${focusedComment.user.id}`} className="hover:underline">
+                  <p className="text-white text-sm font-semibold">{focusedComment.isDeleted ? '[deleted]' : focusedComment.user.displayName}</p>
+                </Link>
                 <p className="text-zinc-500 text-xs">
                   {new Date(focusedComment.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   {focusedComment.isEdited && ' · edited'}
@@ -133,8 +144,18 @@ export default function CommentSection({ postId, postTitle, postAuthorName, comm
               <div key={blob.parent.id} className="border-b border-zinc-800">
                 <div className="px-4 pt-4 pb-2">
                   <div className="flex items-center gap-2 mb-1">
-                    <div className="w-7 h-7 rounded-full bg-zinc-700 shrink-0" />
-                    <p className="text-white text-sm font-semibold">{blob.parent.isDeleted ? '[deleted]' : blob.parent.user.displayName}</p>
+                    <Link href={blob.parent.isDeleted ? '#' : `/profile/${blob.parent.user.id}`} className="hover:opacity-80 transition-opacity">
+                      {blob.parent.isDeleted || !blob.parent.user.avatarUrl ? (
+                        <div className="w-7 h-7 rounded-full bg-zinc-700 shrink-0 flex items-center justify-center text-white text-[10px] font-bold">
+                          {!blob.parent.isDeleted && blob.parent.user.displayName.charAt(0).toUpperCase()}
+                        </div>
+                      ) : (
+                        <img src={blob.parent.user.avatarUrl} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" />
+                      )}
+                    </Link>
+                    <Link href={blob.parent.isDeleted ? '#' : `/profile/${blob.parent.user.id}`} className="hover:underline">
+                      <p className="text-white text-sm font-semibold">{blob.parent.isDeleted ? '[deleted]' : blob.parent.user.displayName}</p>
+                    </Link>
                     <span className="text-zinc-600 text-xs">
                       {new Date(blob.parent.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </span>
@@ -147,7 +168,9 @@ export default function CommentSection({ postId, postTitle, postAuthorName, comm
                   <div className="ml-9 border-l-2 border-zinc-700">
                     {blob.topChildren.map(child => (
                       <div key={child.id} className="px-4 py-2">
-                        <p className="text-zinc-300 text-xs font-semibold mb-1">{child.isDeleted ? '[deleted]' : child.user.displayName}</p>
+                        <Link href={child.isDeleted ? '#' : `/profile/${child.user.id}`} className="hover:underline">
+                          <p className="text-zinc-300 text-xs font-semibold mb-1">{child.isDeleted ? '[deleted]' : child.user.displayName}</p>
+                        </Link>
                         <p className="text-zinc-400 text-sm">{child.isDeleted ? '[this comment has been deleted]' : child.content}</p>
                       </div>
                     ))}

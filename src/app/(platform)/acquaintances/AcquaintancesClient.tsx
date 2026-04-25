@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import EvaluationModal from '@/components/EvaluationModal'
 
 type UserInfo = {
@@ -116,15 +117,19 @@ export default function AcquaintancesClient({ initialIncoming, initialOutgoing, 
             {searchResults.map(user => (
               <div key={user.id} className="flex items-center justify-between p-4 bg-zinc-950 border border-zinc-800 rounded-xl hover:border-zinc-700 transition-colors">
                 <div className="flex items-center gap-4">
-                  {user.avatarUrl ? (
-                    <img src={user.avatarUrl} alt={user.displayName} className="w-12 h-12 rounded-full object-cover border-2 border-zinc-800" />
-                  ) : (
-                    <div className="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center font-bold text-white text-xl border-2 border-zinc-700">
-                      {user.displayName.charAt(0).toUpperCase()}
-                    </div>
-                  )}
+                  <Link href={`/profile/${user.id}`} className="hover:opacity-80 transition-opacity">
+                    {user.avatarUrl ? (
+                      <img src={user.avatarUrl} alt={user.displayName} className="w-12 h-12 rounded-full object-cover border-2 border-zinc-800" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center font-bold text-white text-xl border-2 border-zinc-700">
+                        {user.displayName.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </Link>
                   <div className="overflow-hidden">
-                    <h4 className="text-white font-bold text-lg truncate">{user.displayName}</h4>
+                    <Link href={`/profile/${user.id}`} className="hover:underline">
+                      <h4 className="text-white font-bold text-lg truncate">{user.displayName}</h4>
+                    </Link>
                     <span className="text-zinc-500 text-sm truncate block">{user.email}</span>
                   </div>
                 </div>
@@ -167,15 +172,19 @@ export default function AcquaintancesClient({ initialIncoming, initialOutgoing, 
             {initialIncoming.map(({ user }) => (
               <div key={user.id} className="flex items-center justify-between p-4 bg-zinc-950 border border-zinc-800 rounded-xl">
                  <div className="flex items-center gap-3 min-w-0 flex-1 mr-4">
-                  {user.avatarUrl ? (
-                    <img src={user.avatarUrl} alt={user.displayName} className="w-10 h-10 rounded-full object-cover shrink-0" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center font-bold text-white text-sm shrink-0">
-                      {user.displayName.charAt(0).toUpperCase()}
-                    </div>
-                  )}
+                  <Link href={`/profile/${user.id}`} className="hover:opacity-80 transition-opacity">
+                    {user.avatarUrl ? (
+                      <img src={user.avatarUrl} alt={user.displayName} className="w-10 h-10 rounded-full object-cover shrink-0" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center font-bold text-white text-sm shrink-0">
+                        {user.displayName.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </Link>
                   <div className="overflow-hidden">
-                    <h4 className="text-white font-semibold truncate">{user.displayName}</h4>
+                    <Link href={`/profile/${user.id}`} className="hover:underline">
+                      <h4 className="text-white font-semibold truncate">{user.displayName}</h4>
+                    </Link>
                     <span className="text-zinc-500 text-xs truncate block">{user.email}</span>
                   </div>
                 </div>
@@ -213,15 +222,19 @@ export default function AcquaintancesClient({ initialIncoming, initialOutgoing, 
             {initialOutgoing.map(({ user }) => (
               <div key={user.id} className="flex items-center justify-between p-4 bg-zinc-950 border border-zinc-800 rounded-xl">
                  <div className="flex items-center gap-3 min-w-0 flex-1 mr-4">
-                  {user.avatarUrl ? (
-                    <img src={user.avatarUrl} alt={user.displayName} className="w-10 h-10 rounded-full object-cover shrink-0" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center font-bold text-white text-sm shrink-0">
-                      {user.displayName.charAt(0).toUpperCase()}
-                    </div>
-                  )}
+                  <Link href={`/profile/${user.id}`} className="hover:opacity-80 transition-opacity">
+                    {user.avatarUrl ? (
+                      <img src={user.avatarUrl} alt={user.displayName} className="w-10 h-10 rounded-full object-cover shrink-0" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center font-bold text-white text-sm shrink-0">
+                        {user.displayName.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </Link>
                   <div className="overflow-hidden">
-                    <h4 className="text-white font-semibold truncate">{user.displayName}</h4>
+                    <Link href={`/profile/${user.id}`} className="hover:underline">
+                      <h4 className="text-white font-semibold truncate">{user.displayName}</h4>
+                    </Link>
                     <span className="text-zinc-500 text-xs truncate block">{user.email}</span>
                   </div>
                 </div>
@@ -250,15 +263,19 @@ export default function AcquaintancesClient({ initialIncoming, initialOutgoing, 
             {initialAcquaintances.map(({ user, canEvaluate }) => (
               <div key={user.id} className="flex flex-col p-5 bg-zinc-950 border border-zinc-800 rounded-xl group hover:border-zinc-700 transition-colors">
                 <div className="flex items-center gap-4 mb-4">
-                  {user.avatarUrl ? (
-                    <img src={user.avatarUrl} alt={user.displayName} className="w-14 h-14 rounded-full object-cover border-2 border-zinc-800" />
-                  ) : (
-                    <div className="w-14 h-14 rounded-full bg-zinc-800 flex items-center justify-center font-bold text-white text-xl border-2 border-zinc-700">
-                      {user.displayName.charAt(0).toUpperCase()}
-                    </div>
-                  )}
+                  <Link href={`/profile/${user.id}`} className="hover:opacity-80 transition-opacity">
+                    {user.avatarUrl ? (
+                      <img src={user.avatarUrl} alt={user.displayName} className="w-14 h-14 rounded-full object-cover border-2 border-zinc-800" />
+                    ) : (
+                      <div className="w-14 h-14 rounded-full bg-zinc-800 flex items-center justify-center font-bold text-white text-xl border-2 border-zinc-700">
+                        {user.displayName.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </Link>
                   <div className="overflow-hidden">
-                    <h4 className="text-white font-bold truncate">{user.displayName}</h4>
+                    <Link href={`/profile/${user.id}`} className="hover:underline">
+                      <h4 className="text-white font-bold truncate">{user.displayName}</h4>
+                    </Link>
                     <span className="text-zinc-500 text-xs truncate block">{user.email}</span>
                   </div>
                 </div>

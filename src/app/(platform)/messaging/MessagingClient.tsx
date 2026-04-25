@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 type UserInfo = {
   id: string
@@ -166,7 +167,13 @@ export default function MessagingClient({ initialThreads, currentUserId }: Props
                   selectedUserId === thread.user.id ? 'bg-zinc-800' : ''
                 }`}
               >
-                <div className="relative shrink-0">
+                <div 
+                  className="relative shrink-0 hover:opacity-80 transition-opacity cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    router.push(`/profile/${thread.user.id}`)
+                  }}
+                >
                   {thread.user.avatarUrl ? (
                     <img src={thread.user.avatarUrl} alt={thread.user.displayName} className="w-12 h-12 rounded-full object-cover" />
                   ) : (
@@ -216,14 +223,18 @@ export default function MessagingClient({ initialThreads, currentUserId }: Props
               >
                 ← Back
               </button>
-              {activeThread?.user.avatarUrl ? (
-                <img src={activeThread.user.avatarUrl} className="w-10 h-10 rounded-full object-cover shrink-0" />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-zinc-700 flex items-center justify-center font-bold text-white text-sm shrink-0">
-                  {activeThread?.user.displayName.charAt(0).toUpperCase()}
-                </div>
-              )}
-              <h2 className="text-lg font-bold text-white truncate">{activeThread?.user.displayName}</h2>
+              <Link href={`/profile/${activeThread?.user.id}`} className="hover:opacity-80 transition-opacity">
+                {activeThread?.user.avatarUrl ? (
+                  <img src={activeThread.user.avatarUrl} className="w-10 h-10 rounded-full object-cover shrink-0" />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-zinc-700 flex items-center justify-center font-bold text-white text-sm shrink-0">
+                    {activeThread?.user.displayName.charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </Link>
+              <Link href={`/profile/${activeThread?.user.id}`} className="hover:underline truncate">
+                <h2 className="text-lg font-bold text-white truncate">{activeThread?.user.displayName}</h2>
+              </Link>
             </div>
             
             {/* Messages history */}

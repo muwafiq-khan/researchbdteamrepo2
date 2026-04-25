@@ -17,6 +17,7 @@ export default async function SavedPage() {
         include: {
           author: {
             select: {
+              id: true,
               displayName: true,
               avatarUrl: true,
             }
@@ -72,6 +73,7 @@ export default async function SavedPage() {
               id={post.id}
               title={post.title}
               postType={post.postType}
+              authorId={post.author.id}
               authorName={post.author.displayName}
               authorAvatar={post.author.avatarUrl ?? ''}
               createdAt={post.createdAt.toLocaleDateString('en-US', {

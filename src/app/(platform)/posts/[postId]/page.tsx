@@ -23,6 +23,7 @@ export default async function PostViewPage({ params }: PageProps) {
     include: {
       author: {
         select: {
+          id: true,
           displayName: true,
           avatarUrl: true,
         }
@@ -45,6 +46,7 @@ export default async function PostViewPage({ params }: PageProps) {
         include: {
           user: {
             select: {
+              id: true,
               displayName: true,
               avatarUrl: true,
             }
@@ -139,13 +141,17 @@ export default async function PostViewPage({ params }: PageProps) {
         <div className="lg:col-span-2">
 
       <div className="flex items-center gap-4 mb-6">
-        <img
-          src={post.author.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author.displayName)}&background=random`}
-          alt={post.author.displayName}
-          className="w-14 h-14 rounded-full object-cover ring-2 ring-zinc-800"
-        />
+        <Link href={`/profile/${post.author.id}`} className="hover:opacity-80 transition-opacity flex-shrink-0">
+          <img
+            src={post.author.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author.displayName)}&background=random`}
+            alt={post.author.displayName}
+            className="w-14 h-14 rounded-full object-cover ring-2 ring-zinc-800"
+          />
+        </Link>
         <div>
-          <h1 className="text-2xl font-bold text-white">{post.author.displayName}</h1>
+          <Link href={`/profile/${post.author.id}`} className="hover:underline">
+            <h1 className="text-2xl font-bold text-white">{post.author.displayName}</h1>
+          </Link>
           <p className="text-zinc-500">
             {post.createdAt.toLocaleDateString('en-US', {
               year: 'numeric',

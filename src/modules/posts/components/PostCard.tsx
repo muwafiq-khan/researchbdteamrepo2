@@ -6,11 +6,13 @@ import LikeButton from './LikeButton'
 import CommentSection from './CommentSection'
 import FeedFollowButton from './FeedFollowButton'
 import SaveButton from './SaveButton'
+import Link from 'next/link'
 
 type PostCardProps = {
   id: string
   title: string
   postType: string
+  authorId: string
   authorName: string
   authorAvatar: string | null | undefined
   createdAt: string
@@ -25,6 +27,7 @@ export default function PostCard({
   id,
   title,
   postType,
+  authorId,
   authorName,
   authorAvatar,
   createdAt,
@@ -48,7 +51,7 @@ export default function PostCard({
     <div className="w-full border border-zinc-800 bg-zinc-900 rounded-lg p-4 relative">
 
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-3">
+        <Link href={`/profile/${authorId}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
           {authorAvatar ? (
             <img
               src={authorAvatar}
@@ -61,7 +64,7 @@ export default function PostCard({
             </div>
           )}
           <span className="font-semibold text-white">{authorName}</span>
-        </div>
+        </Link>
 
         <SaveButton postId={id} initialSaved={initialSaved} />
       </div>

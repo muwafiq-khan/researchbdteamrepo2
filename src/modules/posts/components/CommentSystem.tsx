@@ -1,8 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 
 type User = {
+  id: string
   displayName: string
   avatarUrl: string | null
 }
@@ -83,14 +85,18 @@ export default function CommentSystem({
         {comments.length > 0 ? (
           comments.map((comment) => (
             <div key={comment.id} className="flex gap-4">
-              <img
-                src={comment.user.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.user.displayName)}&background=random`}
-                alt={comment.user.displayName}
-                className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-              />
+              <Link href={`/profile/${comment.user.id}`} className="hover:opacity-80 transition-opacity flex-shrink-0">
+                <img
+                  src={comment.user.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.user.displayName)}&background=random`}
+                  alt={comment.user.displayName}
+                  className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                />
+              </Link>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="font-bold text-white">{comment.user.displayName}</span>
+                  <Link href={`/profile/${comment.user.id}`} className="hover:underline">
+                    <span className="font-bold text-white">{comment.user.displayName}</span>
+                  </Link>
                   <span className="text-xs text-zinc-500">
                     {new Date(comment.createdAt).toLocaleDateString()}
                   </span>

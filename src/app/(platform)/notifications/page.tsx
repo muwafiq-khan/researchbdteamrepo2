@@ -56,17 +56,31 @@ export default async function NotificationsPage() {
                   isRead ? 'border-zinc-800 bg-black' : 'border-zinc-600 bg-zinc-900/50'
                 }`}
               >
-                {sourceUser?.avatarUrl ? (
-                  <img src={sourceUser.avatarUrl} alt="Avatar" className="w-10 h-10 rounded-full object-cover" />
+                {sourceUser ? (
+                  <Link href={`/profile/${sourceUser.id}`} className="hover:opacity-80 transition-opacity">
+                    {sourceUser.avatarUrl ? (
+                      <img src={sourceUser.avatarUrl} alt="Avatar" className="w-10 h-10 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-800 font-bold text-white uppercase text-sm">
+                        {sourceUser.displayName.charAt(0)}
+                      </div>
+                    )}
+                  </Link>
                 ) : (
                   <div className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-800 font-bold text-white uppercase text-sm">
-                    {sourceUser?.displayName?.charAt(0) ?? '?'}
+                    ?
                   </div>
                 )}
                 
                 <div className="flex flex-col">
                   <p className="text-white text-sm">
-                    <span className="font-semibold">{sourceUser?.displayName ?? 'Someone'}</span>{' '}
+                    {sourceUser ? (
+                      <Link href={`/profile/${sourceUser.id}`} className="font-semibold hover:underline">
+                        {sourceUser.displayName}
+                      </Link>
+                    ) : (
+                      <span className="font-semibold">Someone</span>
+                    )}{' '}
                     <span className="text-zinc-300">{message}</span>
                   </p>
                   <p className="text-xs text-zinc-500 mt-1">

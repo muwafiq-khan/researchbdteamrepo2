@@ -16,6 +16,7 @@ export default async function FeedPage() {
     include: {
       author: {
         select: {
+          id: true,
           displayName: true,
           avatarUrl: true,
         }
@@ -60,6 +61,7 @@ export default async function FeedPage() {
             id={post.id}
             title={post.title}
             postType={post.postType}
+            authorId={post.author.id}
             authorName={post.author.displayName}
             authorAvatar={post.author.avatarUrl ?? ''}
             createdAt={post.createdAt.toLocaleDateString('en-US', {
