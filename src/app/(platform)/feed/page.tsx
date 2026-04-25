@@ -74,6 +74,7 @@ export default async function FeedPage() {
             commentCount={commentCount}
             initialFollowed={initialFollowed}
             initialSaved={initialSaved}
+            currentUserId={currentUserId}
           />
         )
       })}

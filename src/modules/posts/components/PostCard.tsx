@@ -6,6 +6,8 @@ import LikeButton from './LikeButton'
 import CommentSection from './CommentSection'
 import FeedFollowButton from './FeedFollowButton'
 import SaveButton from './SaveButton'
+import CollabButton from './CollabButton'
+import AIAnalyzerButton from './AIAnalyzerButton'
 import Link from 'next/link'
 
 type PostCardProps = {
@@ -21,6 +23,7 @@ type PostCardProps = {
   commentCount: number
   initialFollowed: boolean
   initialSaved: boolean
+  currentUserId: string
 }
 
 export default function PostCard({
@@ -36,7 +39,9 @@ export default function PostCard({
   commentCount,
   initialFollowed,
   initialSaved,
+  currentUserId,
 }: PostCardProps) {
+  const isOtherUser = authorId !== currentUserId
 
   const postTypeColors: Record<string, string> = {
     collaboration: 'bg-blue-100 text-blue-800',
@@ -102,6 +107,14 @@ export default function PostCard({
           postId={id}
           initialFollowed={initialFollowed}
         />
+
+        {/* Only show on other people's posts */}
+        {isOtherUser && (
+          <>
+            <CollabButton authorId={authorId} authorName={authorName} />
+            <AIAnalyzerButton targetUserId={authorId} targetUserName={authorName} />
+          </>
+        )}
       </div>
 
     </div>
