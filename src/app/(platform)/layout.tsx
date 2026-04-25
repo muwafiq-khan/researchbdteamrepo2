@@ -56,6 +56,9 @@ export default async function PlatformLayout({ children }: PlatformLayoutProps) 
             <Link href="/feed" className="flex items-center gap-4 px-3 py-3 rounded-full hover:bg-zinc-900 transition-colors text-lg font-medium">
               <span>🏠</span> <span>Feed</span>
             </Link>
+            <Link href="/saved" className="flex items-center gap-4 px-3 py-3 rounded-full hover:bg-zinc-900 transition-colors text-lg font-medium">
+              <span>🔖</span> <span>Saved</span>
+            </Link>
             <Link href="/acquaintances" className="flex items-center gap-4 px-3 py-3 rounded-full hover:bg-zinc-900 transition-colors text-lg font-medium">
               <span>🤝</span> <span>Acquaintances</span>
             </Link>
@@ -75,6 +78,9 @@ export default async function PlatformLayout({ children }: PlatformLayoutProps) 
             </Link>
             <Link href="/paraphraser" className="flex items-center gap-4 px-3 py-3 rounded-full hover:bg-zinc-900 transition-colors text-lg font-medium">
               <span>✍️</span> <span>Paraphraser</span>
+            </Link>
+            <Link href="/ai-help" className="flex items-center gap-4 px-3 py-3 rounded-full hover:bg-zinc-900 transition-colors text-lg font-medium">
+              <span>🤖</span> <span>AI Help</span>
             </Link>
           </nav>
           <div className="flex flex-col gap-1 w-full mb-4">
@@ -99,6 +105,9 @@ export default async function PlatformLayout({ children }: PlatformLayoutProps) 
               <Link href="/problems" className="flex-1 text-center py-3 text-sm font-semibold text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors border-b-2 border-transparent hover:border-white">
                 Problems
               </Link>
+              <Link href="/saved" className="flex-1 text-center py-3 text-sm font-semibold text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors border-b-2 border-transparent hover:border-white">
+                Saved
+              </Link>
             </div>
           </div>
           {children}
@@ -107,6 +116,7 @@ export default async function PlatformLayout({ children }: PlatformLayoutProps) 
         <nav className="fixed bottom-0 left-0 right-0 bg-black border-t border-zinc-800 flex justify-around items-center py-3 md:hidden z-50">
           <Link href="/profile" className="flex flex-col items-center text-white text-xl">👤</Link>
           <Link href="/feed" className="flex flex-col items-center text-white text-xl">🏠</Link>
+          <Link href="/saved" className="flex flex-col items-center text-white text-xl">🔖</Link>
           <Link href="/acquaintances" className="flex flex-col items-center text-white text-xl">🤝</Link>
           <Link href="/messaging" className="flex flex-col items-center text-white text-xl">✉️</Link>
           <Link href="/notifications" className="relative flex flex-col items-center text-white text-xl">
@@ -118,6 +128,7 @@ export default async function PlatformLayout({ children }: PlatformLayoutProps) 
             )}
           </Link>
           <Link href="/paraphraser" className="flex flex-col items-center text-white text-xl">✍️</Link>
+          <Link href="/ai-help" className="flex flex-col items-center text-white text-xl">🤖</Link>
         </nav>
 
         {/* Mobile: fixed circle "+" button */}

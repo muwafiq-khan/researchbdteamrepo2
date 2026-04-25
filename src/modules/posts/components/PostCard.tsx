@@ -5,6 +5,7 @@
 import LikeButton from './LikeButton'
 import CommentSection from './CommentSection'
 import FeedFollowButton from './FeedFollowButton'
+import SaveButton from './SaveButton'
 
 type PostCardProps = {
   id: string
@@ -17,6 +18,7 @@ type PostCardProps = {
   initialLiked: boolean
   commentCount: number
   initialFollowed: boolean
+  initialSaved: boolean
 }
 
 export default function PostCard({
@@ -30,6 +32,7 @@ export default function PostCard({
   initialLiked,
   commentCount,
   initialFollowed,
+  initialSaved,
 }: PostCardProps) {
 
   const postTypeColors: Record<string, string> = {
@@ -42,21 +45,25 @@ export default function PostCard({
   const badgeColor = postTypeColors[postType] ?? 'bg-gray-100 text-gray-800'
 
   return (
-    <div className="w-full border border-zinc-800 bg-zinc-900 rounded-lg p-4">
+    <div className="w-full border border-zinc-800 bg-zinc-900 rounded-lg p-4 relative">
 
-      <div className="flex items-center gap-3 mb-3">
-        {authorAvatar ? (
-          <img
-            src={authorAvatar}
-            alt={authorName}
-            className="w-10 h-10 rounded-full object-cover"
-          />
-        ) : (
-          <div className="w-10 h-10 rounded-full bg-zinc-700 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-            {authorName?.charAt(0)?.toUpperCase() ?? '?'}
-          </div>
-        )}
-        <span className="font-semibold text-white">{authorName}</span>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-3">
+          {authorAvatar ? (
+            <img
+              src={authorAvatar}
+              alt={authorName}
+              className="w-10 h-10 rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-zinc-700 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+              {authorName?.charAt(0)?.toUpperCase() ?? '?'}
+            </div>
+          )}
+          <span className="font-semibold text-white">{authorName}</span>
+        </div>
+
+        <SaveButton postId={id} initialSaved={initialSaved} />
       </div>
 
       <span className={`px-2 py-1 rounded text-xs font-medium ${badgeColor}`}>

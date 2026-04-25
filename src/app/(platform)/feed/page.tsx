@@ -30,6 +30,11 @@ export default async function FeedPage() {
           userId: currentUserId
         }
       },
+      saves: {
+        where: {
+          userId: currentUserId
+        }
+      },
       _count: {
         select: { reactions: true, comments: true }
       }
@@ -45,6 +50,7 @@ export default async function FeedPage() {
       {posts.map(function(post) {
         const initialLiked = post.reactions.length > 0
         const initialFollowed = post.follows.length > 0
+        const initialSaved = post.saves.length > 0
         const likeCount = post._count.reactions
         const commentCount = post._count.comments
 
@@ -65,6 +71,7 @@ export default async function FeedPage() {
             initialLiked={initialLiked}
             commentCount={commentCount}
             initialFollowed={initialFollowed}
+            initialSaved={initialSaved}
           />
         )
       })}
