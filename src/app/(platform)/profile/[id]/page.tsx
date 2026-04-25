@@ -12,18 +12,35 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
 
   const resolvedParams = await params
 
+  const includeConfig: any = {
+    researcher: {
+      include: {
+        researchFields: { include: { field: true } },
+        publications: true,
+        institutions: true,
+      }
+    },
+    fundingAgency: true,
+    receivedEvaluations: true,
+  }
+
+  if (viewerId === resolvedParams.id) {
+    includeConfig.givenEvaluations = {
+      include: {
+        evaluatee: {
+          select: {
+            id: true,
+            displayName: true,
+            avatarUrl: true
+          }
+        }
+      }
+    }
+  }
+
   const profileUser = await prisma.users.findUnique({
     where: { id: resolvedParams.id },
-    include: {
-      researcher: {
-        include: {
-          researchFields: { include: { field: true } },
-          publications: true,
-          institutions: true,
-        }
-      },
-      fundingAgency: true,
-    }
+    include: includeConfig
   })
 
   if (!profileUser) {
@@ -67,6 +84,25 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
     select: { id: true, name: true }
   })
 
+  // Calculate Aggregated Evaluations
+  let aggregatedEvaluations = null
+  if (profileUser.receivedEvaluations && profileUser.receivedEvaluations.length > 0) {
+    const evals = profileUser.receivedEvaluations
+    const count = evals.length
+    aggregatedEvaluations = {
+      count,
+      punctuality: Math.round((evals.reduce((a: number, b: any) => a + b.punctualityScore, 0) / count) * 10) / 10,
+      dedication: Math.round((evals.reduce((a: number, b: any) => a + b.dedicationScore, 0) / count) * 10) / 10,
+      collaboration: Math.round((evals.reduce((a: number, b: any) => a + b.collaborationScore, 0) / count) * 10) / 10,
+      integrity: Math.round((evals.reduce((a: number, b: any) => a + (b.integrityScore || 0), 0) / count) * 10) / 10,
+      analytical: Math.round((evals.reduce((a: number, b: any) => a + (b.analyticalScore || 0), 0) / count) * 10) / 10,
+      inquisitiveness: Math.round((evals.reduce((a: number, b: any) => a + (b.inquisitivenessScore || 0), 0) / count) * 10) / 10,
+      adaptability: Math.round((evals.reduce((a: number, b: any) => a + (b.adaptabilityScore || 0), 0) / count) * 10) / 10,
+      responsiveness: Math.round((evals.reduce((a: number, b: any) => a + (b.responsivenessScore || 0), 0) / count) * 10) / 10,
+      openMindedness: Math.round((evals.reduce((a: number, b: any) => a + (b.openMindednessScore || 0), 0) / count) * 10) / 10,
+    }
+  }
+
   // Hack for Prisma DateTime to pass to Client Component (serializable)
   const serializedUser = JSON.parse(JSON.stringify(profileUser))
 
@@ -75,6 +111,8 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
       profileUser={serializedUser} 
       isOwner={isOwner} 
       allFields={allFields}
+      aggregatedEvaluations={aggregatedEvaluations}
+      givenEvaluations={profileUser.givenEvaluations ? JSON.parse(JSON.stringify(profileUser.givenEvaluations)) : []}
     />
   )
 }

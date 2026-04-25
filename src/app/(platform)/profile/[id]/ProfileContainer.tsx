@@ -2,8 +2,10 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import EvaluationModal from '@/components/EvaluationModal'
 
-export default function ProfileContainer({ profileUser, isOwner, allFields }: any) {
+export default function ProfileContainer({ profileUser, isOwner, allFields, aggregatedEvaluations, givenEvaluations }: any) {
   const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -25,6 +27,11 @@ export default function ProfileContainer({ profileUser, isOwner, allFields }: an
   
   const [publications, setPublications] = useState<any[]>(profileUser.researcher?.publications || [])
   const [institutions, setInstitutions] = useState<any[]>(profileUser.researcher?.institutions || [])
+
+  // Evaluation Modal State
+  const [isEvalModalOpen, setIsEvalModalOpen] = useState(false)
+  const [selectedEvaluateeId, setSelectedEvaluateeId] = useState('')
+  const [selectedEvaluateeName, setSelectedEvaluateeName] = useState('')
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -351,6 +358,79 @@ export default function ProfileContainer({ profileUser, isOwner, allFields }: an
               </section>
             )}
 
+            {/* Aggregated Evaluations */}
+            {profileUser.accountType === 'researcher' && aggregatedEvaluations && (
+              <section className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+                <h2 className="text-xl font-bold text-white mb-4">Researcher Evaluation Summary</h2>
+                <p className="text-zinc-400 text-sm mb-6">Based on {aggregatedEvaluations.count} evaluation{aggregatedEvaluations.count !== 1 ? 's' : ''} from peers.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {[
+                    { label: 'Punctuality', score: aggregatedEvaluations.punctuality },
+                    { label: 'Work Dedication', score: aggregatedEvaluations.dedication },
+                    { label: 'Collaboration', score: aggregatedEvaluations.collaboration },
+                    { label: 'Integrity', score: aggregatedEvaluations.integrity },
+                    { label: 'Analytical Thinking', score: aggregatedEvaluations.analytical },
+                    { label: 'Inquisitiveness', score: aggregatedEvaluations.inquisitiveness },
+                    { label: 'Adaptability', score: aggregatedEvaluations.adaptability },
+                    { label: 'Responsiveness', score: aggregatedEvaluations.responsiveness },
+                    { label: 'Open-mindedness', score: aggregatedEvaluations.openMindedness },
+                  ].map((metric, idx) => (
+                    <div key={idx} className="bg-zinc-950 p-3 rounded-xl border border-zinc-800 flex items-center justify-between">
+                      <span className="text-zinc-300 text-sm font-medium">{metric.label}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-yellow-400">★</span>
+                        <span className="text-white font-bold">{metric.score}</span>
+                        <span className="text-zinc-500 text-xs">/ 5</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Evaluation History (Owner Only) */}
+            {isOwner && givenEvaluations && givenEvaluations.length > 0 && (
+              <section className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+                <h2 className="text-xl font-bold text-white mb-4">Your Evaluation History</h2>
+                <p className="text-zinc-400 text-sm mb-6">Evaluations you have submitted for other researchers. You can edit them here.</p>
+                <div className="space-y-4">
+                  {givenEvaluations.map((evaluation: any) => (
+                    <div key={evaluation.id} className="bg-zinc-950 p-4 rounded-xl border border-zinc-800 flex items-center justify-between group">
+                      <div className="flex items-center gap-3">
+                        <Link href={`/profile/${evaluation.evaluatee.id}`} className="hover:opacity-80 transition-opacity">
+                          {evaluation.evaluatee.avatarUrl ? (
+                            <img src={evaluation.evaluatee.avatarUrl} alt={evaluation.evaluatee.displayName} className="w-10 h-10 rounded-full object-cover shrink-0" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center font-bold text-white text-sm shrink-0">
+                              {evaluation.evaluatee.displayName.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                        </Link>
+                        <div>
+                          <Link href={`/profile/${evaluation.evaluatee.id}`} className="hover:underline">
+                            <h4 className="text-white font-bold">{evaluation.evaluatee.displayName}</h4>
+                          </Link>
+                          <p className="text-zinc-500 text-xs mt-0.5">
+                            Evaluated on {new Date(evaluation.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => {
+                          setSelectedEvaluateeId(evaluation.evaluatee.id)
+                          setSelectedEvaluateeName(evaluation.evaluatee.displayName)
+                          setIsEvalModalOpen(true)
+                        }}
+                        className="bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 text-xs font-semibold px-4 py-2 rounded-lg transition-colors"
+                      >
+                        Edit Evaluation
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
           </div>
 
           {/* Sidebar Column */}
@@ -463,6 +543,19 @@ export default function ProfileContainer({ profileUser, isOwner, allFields }: an
           </div>
         </div>
       </div>
+      
+      {/* Evaluation Modal */}
+      {isEvalModalOpen && (
+        <EvaluationModal
+          isOpen={isEvalModalOpen}
+          onClose={() => {
+            setIsEvalModalOpen(false)
+            router.refresh() // Refresh to update the history dates or any changes
+          }}
+          evaluateeId={selectedEvaluateeId}
+          evaluateeName={selectedEvaluateeName}
+        />
+      )}
     </div>
   )
 }
