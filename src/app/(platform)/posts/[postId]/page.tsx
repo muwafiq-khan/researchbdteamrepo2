@@ -6,6 +6,7 @@ import { authOptions } from '../../../api/auth/[...nextauth]/route'
 import PostDetails from '../../../../modules/posts/components/PostDetails'
 import CommentSystem from '../../../../modules/posts/components/CommentSystem'
 import LikeButton from '../../../../modules/posts/components/LikeButton'
+import SaveButton from '../../../../modules/posts/components/SaveButton'
 import RelatedContentSidebar from '../../../../shared/components/RelatedContentSidebar'
 
 type PageProps = {
@@ -34,6 +35,9 @@ export default async function PostViewPage({ params }: PageProps) {
       reactions: {
         where: { userId: currentUserId || '' }
       },
+      saves: {
+        where: { userId: currentUserId || '' }
+      },
       _count: {
         select: { reactions: true }
       },
@@ -54,6 +58,7 @@ export default async function PostViewPage({ params }: PageProps) {
   if (!post) notFound()
 
   const initialLiked = post.reactions.length > 0
+  const initialSaved = post.saves.length > 0
   const likeCount = post._count.reactions
 
   const postTypeColors: Record<string, string> = {
@@ -167,6 +172,10 @@ export default async function PostViewPage({ params }: PageProps) {
           postId={post.id}
           initialCount={likeCount}
           initialLiked={initialLiked}
+        />
+        <SaveButton
+          postId={post.id}
+          initialSaved={initialSaved}
         />
         <div className="flex items-center gap-2 text-zinc-400">
           <span>💬</span>
