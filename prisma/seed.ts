@@ -431,6 +431,194 @@ async function main() {
     })
   }
 
+  // ===== EXTRA RESEARCHER USERS =====
+  const sara = await prisma.users.upsert({
+    where: { email: 'sara@test.com' },
+    update: {},
+    create: {
+      email: 'sara@test.com',
+      passwordHash: '$2b$10$C.mFI.aFsB/C1GPpaNGg2Oo0cCEATfmgHr7sjtmPpv4pMlSne4N5q',
+      accountType: 'researcher',
+      displayName: 'Sara Ahmed',
+      avatarUrl: 'https://i.pravatar.cc/150?img=5',
+      isVerified: true,
+    }
+  })
+
+  const tariq = await prisma.users.upsert({
+    where: { email: 'tariq@test.com' },
+    update: {},
+    create: {
+      email: 'tariq@test.com',
+      passwordHash: '$2b$10$C.mFI.aFsB/C1GPpaNGg2Oo0cCEATfmgHr7sjtmPpv4pMlSne4N5q',
+      accountType: 'researcher',
+      displayName: 'Dr. Tariq Hassan',
+      avatarUrl: 'https://i.pravatar.cc/150?img=6',
+      isVerified: true,
+    }
+  })
+
+  const mitu = await prisma.users.upsert({
+    where: { email: 'mitu@test.com' },
+    update: {},
+    create: {
+      email: 'mitu@test.com',
+      passwordHash: '$2b$10$C.mFI.aFsB/C1GPpaNGg2Oo0cCEATfmgHr7sjtmPpv4pMlSne4N5q',
+      accountType: 'researcher',
+      displayName: 'Mitu Begum',
+      avatarUrl: 'https://i.pravatar.cc/150?img=7',
+      isVerified: true,
+    }
+  })
+
+  const rafiq = await prisma.users.upsert({
+    where: { email: 'rafiq@test.com' },
+    update: {},
+    create: {
+      email: 'rafiq@test.com',
+      passwordHash: '$2b$10$C.mFI.aFsB/C1GPpaNGg2Oo0cCEATfmgHr7sjtmPpv4pMlSne4N5q',
+      accountType: 'researcher',
+      displayName: 'Prof. Rafiqul Islam',
+      avatarUrl: 'https://i.pravatar.cc/150?img=8',
+      isVerified: true,
+    }
+  })
+
+  const laila = await prisma.users.upsert({
+    where: { email: 'laila@test.com' },
+    update: {},
+    create: {
+      email: 'laila@test.com',
+      passwordHash: '$2b$10$C.mFI.aFsB/C1GPpaNGg2Oo0cCEATfmgHr7sjtmPpv4pMlSne4N5q',
+      accountType: 'researcher',
+      displayName: 'Laila Sultana',
+      avatarUrl: 'https://i.pravatar.cc/150?img=9',
+      isVerified: true,
+    }
+  })
+
+  // ===== RESEARCHER PROFILES =====
+  const researcherData = [
+    {
+      userId: rahim.id,
+      academicLevel: 'professor' as const,
+      institution: 'BUET',
+      bio: 'Climate change researcher focusing on coastal resilience in Bangladesh. 15+ years of field research.',
+      skills: ['Climate Modeling', 'GIS', 'Remote Sensing', 'Python', 'MATLAB'],
+    },
+    {
+      userId: nusrat.id,
+      academicLevel: 'phd' as const,
+      institution: 'University of Dhaka',
+      bio: 'PhD candidate in Environmental Science. Working on water quality analysis using machine learning.',
+      skills: ['Water Quality Analysis', 'Statistical Modeling', 'R', 'SPSS'],
+    },
+    {
+      userId: kamal.id,
+      academicLevel: 'professor' as const,
+      institution: 'Khulna University',
+      bio: 'Professor specializing in agricultural science and crop yield optimization under climate stress.',
+      skills: ['Crop Science', 'Precision Agriculture', 'IoT Sensors', 'Data Analysis'],
+    },
+    {
+      userId: sara.id,
+      academicLevel: 'researcher' as const,
+      institution: 'BRAC University',
+      bio: 'ML researcher building Bengali NLP tools. Focused on low-resource language models.',
+      skills: ['NLP', 'Deep Learning', 'PyTorch', 'Transformers', 'Python'],
+    },
+    {
+      userId: tariq.id,
+      academicLevel: 'phd' as const,
+      institution: 'NSU',
+      bio: 'Medical imaging AI researcher. Building South Asian patient datasets for diagnostic models.',
+      skills: ['Computer Vision', 'Medical Imaging', 'TensorFlow', 'Federated Learning'],
+    },
+    {
+      userId: mitu.id,
+      academicLevel: 'postgraduate' as const,
+      institution: 'SUST',
+      bio: 'Studying arsenic contamination patterns in groundwater using geospatial ML methods.',
+      skills: ['Hydrogeology', 'Spatial Analysis', 'GIS', 'Python', 'Kriging'],
+    },
+    {
+      userId: rafiq.id,
+      academicLevel: 'professor' as const,
+      institution: 'KUET',
+      bio: 'Renewable energy researcher exploring solar and biomass solutions for rural Bangladesh.',
+      skills: ['Renewable Energy', 'Energy Modeling', 'MATLAB', 'Power Systems'],
+    },
+    {
+      userId: laila.id,
+      academicLevel: 'undergraduate' as const,
+      institution: 'IUT',
+      bio: 'Final year undergraduate working on drone-based crop monitoring for smallholder farmers.',
+      skills: ['Drone Systems', 'Computer Vision', 'OpenCV', 'Python'],
+    },
+  ]
+
+  for (const data of researcherData) {
+    await prisma.researchers.upsert({
+      where: { userId: data.userId },
+      update: { academicLevel: data.academicLevel, institution: data.institution, bio: data.bio, skills: data.skills },
+      create: data,
+    })
+  }
+
+  // ===== RESEARCHER QUALIFICATIONS =====
+  const qualData = [
+    { researcherId: rahim.id,  hIndex: 22, citationCount: 1840, publicationCount: 47, starScore: 4.7, feedbackQualityScore: 4.5, contributionPoints: 320, qualificationScore: 88.5 },
+    { researcherId: nusrat.id, hIndex: 7,  citationCount: 210,  publicationCount: 11, starScore: 4.2, feedbackQualityScore: 4.0, contributionPoints: 90,  qualificationScore: 55.0 },
+    { researcherId: kamal.id,  hIndex: 18, citationCount: 1320, publicationCount: 38, starScore: 4.6, feedbackQualityScore: 4.4, contributionPoints: 270, qualificationScore: 81.0 },
+    { researcherId: sara.id,   hIndex: 5,  citationCount: 130,  publicationCount: 8,  starScore: 4.0, feedbackQualityScore: 3.8, contributionPoints: 60,  qualificationScore: 44.0 },
+    { researcherId: tariq.id,  hIndex: 11, citationCount: 580,  publicationCount: 19, starScore: 4.3, feedbackQualityScore: 4.1, contributionPoints: 140, qualificationScore: 65.0 },
+    { researcherId: mitu.id,   hIndex: 3,  citationCount: 55,   publicationCount: 4,  starScore: 3.8, feedbackQualityScore: 3.6, contributionPoints: 30,  qualificationScore: 32.0 },
+    { researcherId: rafiq.id,  hIndex: 14, citationCount: 890,  publicationCount: 29, starScore: 4.4, feedbackQualityScore: 4.3, contributionPoints: 200, qualificationScore: 73.0 },
+    { researcherId: laila.id,  hIndex: 1,  citationCount: 12,   publicationCount: 2,  starScore: 3.5, feedbackQualityScore: 3.4, contributionPoints: 10,  qualificationScore: 18.0 },
+  ]
+
+  for (const q of qualData) {
+    await prisma.researcher_qualifications.upsert({
+      where: { researcherId: q.researcherId },
+      update: q,
+      create: q,
+    })
+  }
+
+  // ===== RESEARCHER FIELDS =====
+  const biomedField = await prisma.fields.upsert({
+    where: { name: 'Biomedical Engineering' },
+    update: {},
+    create: { name: 'Biomedical Engineering', description: 'Application of engineering principles to medicine' },
+  })
+
+  const energyField = await prisma.fields.upsert({
+    where: { name: 'Energy Science' },
+    update: {},
+    create: { name: 'Energy Science', description: 'Study of energy production and sustainability' },
+  })
+
+  const fieldAssignments = [
+    { researcherId: rahim.id,  fieldId: envField.id },
+    { researcherId: rahim.id,  fieldId: csField.id },
+    { researcherId: nusrat.id, fieldId: envField.id },
+    { researcherId: kamal.id,  fieldId: agriField.id },
+    { researcherId: kamal.id,  fieldId: envField.id },
+    { researcherId: sara.id,   fieldId: csField.id },
+    { researcherId: tariq.id,  fieldId: csField.id },
+    { researcherId: tariq.id,  fieldId: biomedField.id },
+    { researcherId: mitu.id,   fieldId: envField.id },
+    { researcherId: rafiq.id,  fieldId: energyField.id },
+    { researcherId: rafiq.id,  fieldId: csField.id },
+    { researcherId: laila.id,  fieldId: agriField.id },
+    { researcherId: laila.id,  fieldId: csField.id },
+  ]
+
+  await prisma.researcher_fields.createMany({
+    skipDuplicates: true,
+    data: fieldAssignments,
+  })
+
   console.log('Seed complete!')
 }
 

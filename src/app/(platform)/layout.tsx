@@ -82,6 +82,9 @@ export default async function PlatformLayout({ children }: PlatformLayoutProps) 
             <Link href="/discovery" className="flex items-center gap-4 px-3 py-3 rounded-full hover:bg-zinc-900 transition-colors text-lg font-medium">
               <span>🔍</span> <span>Discovery</span>
             </Link>
+            <Link href="/researchers" className="flex items-center gap-4 px-3 py-3 rounded-full hover:bg-zinc-900 transition-colors text-lg font-medium">
+              <span>🧑‍🔬</span> <span>Researchers</span>
+            </Link>
             <Link href="/ai-help" className="flex items-center gap-4 px-3 py-3 rounded-full hover:bg-zinc-900 transition-colors text-lg font-medium">
               <span>🤖</span> <span>AI Help</span>
             </Link>
@@ -114,6 +117,9 @@ export default async function PlatformLayout({ children }: PlatformLayoutProps) 
               <Link href="/discovery" className="flex-1 text-center py-3 text-sm font-semibold text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors border-b-2 border-transparent hover:border-white">
                 Discovery
               </Link>
+              <Link href="/researchers" className="flex-1 text-center py-3 text-sm font-semibold text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors border-b-2 border-transparent hover:border-white">
+                Researchers
+              </Link>
             </div>
           </div>
           {children}
@@ -135,6 +141,7 @@ export default async function PlatformLayout({ children }: PlatformLayoutProps) 
           </Link>
           <Link href="/paraphraser" className="flex flex-col items-center text-white text-xl">✍️</Link>
           <Link href="/discovery" className="flex flex-col items-center text-white text-xl">🔍</Link>
+          <Link href="/researchers" className="flex flex-col items-center text-white text-xl">🧑‍🔬</Link>
           <Link href="/ai-help" className="flex flex-col items-center text-white text-xl">🤖</Link>
         </nav>
 
