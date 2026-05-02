@@ -5,7 +5,7 @@ import { authOptions } from '../../auth/[...nextauth]/route'
 
 export async function GET(
   req: Request,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -13,8 +13,9 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { userId } = await params
     const evaluatorId = session.user.id
-    const evaluateeId = params.userId
+    const evaluateeId = userId
 
     if (!evaluateeId) {
       return NextResponse.json({ error: 'Missing evaluatee ID' }, { status: 400 })
@@ -31,7 +32,7 @@ export async function GET(
 
     return NextResponse.json({ evaluation })
   } catch (error) {
-    console.error(`Error in GET /api/evaluations/${params.userId}:`, error)
+    console.error('Error in GET /api/evaluations/[userId]:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
