@@ -5,31 +5,65 @@ import {
   getBreadcrumbs,
 } from '../../../modules/posts/services/commentService'
 
+// ── GET /api/comments?type=top-level&postId=xxx ───────────────
+// ── GET /api/comments?type=thread&commentId=xxx ───────────────
+// ── GET /api/comments?type=ancestors&commentId=xxx ────────────
+
 export async function GET(request: NextRequest) {
+
   const searchParams = request.nextUrl.searchParams
   const type = searchParams.get('type')
 
+  // ── Top-level comments for a post ───────────────────────────
   if (type === 'top-level') {
     const postId = searchParams.get('postId')
-    if (!postId) return NextResponse.json({ error: 'postId is required' }, { status: 400 })
+
+    if (!postId) {
+      return NextResponse.json({ error: 'postId is required' }, { status: 400 })
+    }
+
     const data = await getTopLevelBlobs(postId)
-    return NextResponse.json({ blobs: data.blobs })
+
+    return NextResponse.json({
+      blobs: data.blobs,
+    })
   }
 
+  // ── Thread blobs for a specific comment ─────────────────────
   if (type === 'thread') {
     const commentId = searchParams.get('commentId')
-    if (!commentId) return NextResponse.json({ error: 'commentId is required' }, { status: 400 })
+
+    if (!commentId) {
+      return NextResponse.json({ error: 'commentId is required' }, { status: 400 })
+    }
+
     const data = await getThreadBlobs(commentId)
-    if (!data) return NextResponse.json({ error: 'Comment not found' }, { status: 404 })
-    return NextResponse.json({ focusedComment: data.focusedComment, blobs: data.blobs })
+
+    if (!data) {
+      return NextResponse.json({ error: 'Comment not found' }, { status: 404 })
+    }
+
+    return NextResponse.json({
+      focusedComment: data.focusedComment,
+      blobs: data.blobs,
+    })
   }
 
+  // ── Ancestor chain for breadcrumbs ──────────────────────────
   if (type === 'ancestors') {
     const commentId = searchParams.get('commentId')
-    if (!commentId) return NextResponse.json({ error: 'commentId is required' }, { status: 400 })
+
+    if (!commentId) {
+      return NextResponse.json({ error: 'commentId is required' }, { status: 400 })
+    }
+
     const ancestors = await getBreadcrumbs(commentId)
-    return NextResponse.json({ ancestors })
+    return NextResponse.json({ ancestors: ancestors })
   }
 
-  return NextResponse.json({ error: 'Invalid type. Use: top-level, thread, or ancestors' }, { status: 400 })
+  // ── Unknown type ────────────────────────────────────────────
+  return NextResponse.json(
+    { error: 'Invalid type. Use: top-level, thread, or ancestors' },
+    { status: 400 }
+  )
 }
