@@ -111,7 +111,7 @@ export default function PostCard({
         {/* Only show on other people's posts */}
         {isOtherUser && (
           <>
-            <CollabButton authorId={authorId} authorName={authorName} />
+            <CollabButton postId={id} authorId={authorId} authorName={authorName} />
             <AIAnalyzerButton targetUserId={authorId} targetUserName={authorName} />
           </>
         )}

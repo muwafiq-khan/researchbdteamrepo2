@@ -45,6 +45,8 @@ export default async function NotificationsPage() {
               message = `commented on a post you follow.`
             } else if (notif.type === 'REACTION') {
               message = `reacted to a post you follow.`
+            } else if (notif.type === 'collab_request') {
+              message = `wants to collaborate on your post.`
             } else {
               message = `interacted with a post.`
             }
