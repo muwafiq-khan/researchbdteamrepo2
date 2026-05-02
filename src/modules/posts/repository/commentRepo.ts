@@ -97,3 +97,46 @@ export async function getCommentCount(postId: string) {
     },
   })
 }
+
+// Create a new comment.
+// Computes depth from parent, increments parent's replyCount if replying.
+export async function createComment(data: {
+  postId: string
+  userId: string
+  content: string
+  parentId: string | null
+}) {
+  var depth = 0
+
+  if (data.parentId) {
+    const parent = await prisma.post_comments.findUnique({
+      where: { id: data.parentId },
+      select: { depth: true },
+    })
+
+    if (parent) {
+      depth = parent.depth + 1
+    }
+
+    // Bump the parent's replyCount so the "View thread · N replies" line stays accurate
+    await prisma.post_comments.update({
+      where: { id: data.parentId },
+      data: { replyCount: { increment: 1 } },
+    })
+  }
+
+  return prisma.post_comments.create({
+    data: {
+      postId: data.postId,
+      userId: data.userId,
+      content: data.content,
+      parentId: data.parentId,
+      depth: depth,
+      isEdited: false,
+      isDeleted: false,
+      likeCount: 0,
+      replyCount: 0,
+    },
+    select: COMMENT_SELECT,
+  })
+}

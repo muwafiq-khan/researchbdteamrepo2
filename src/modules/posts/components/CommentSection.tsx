@@ -48,6 +48,8 @@ export default function CommentSection({ postId, postTitle, postAuthorName, comm
   const [blobs, setBlobs] = useState<CommentBlob[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [commentText, setCommentText] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // ── Handler: initial click (comment icon) ───────────────────
   function handleInitialClick() {
@@ -148,6 +150,58 @@ export default function CommentSection({ postId, postTitle, postAuthorName, comm
         console.error('Failed to load thread:', err)
         setError('Failed to load thread')
         setIsLoading(false)
+      })
+  }
+
+  // ── Handler: submit a comment ────────────────────────────────
+  // parentId = focusedComment.id when in a thread, null at top-level.
+  // After success: clear input and reload the current view.
+  function handleSubmitComment() {
+    if (!commentText.trim() || isSubmitting) return
+
+    setIsSubmitting(true)
+
+    var parentId = focusedComment ? focusedComment.id : null
+
+    fetch('/api/comments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        postId: postId,
+        content: commentText.trim(),
+        parentId: parentId,
+      }),
+    })
+      .then(function(res) { return res.json() })
+      .then(function() {
+        setCommentText('')
+        setIsSubmitting(false)
+
+        // Reload the current view so the new comment appears immediately
+        if (focusedComment) {
+          fetch('/api/comments?type=thread&commentId=' + focusedComment.id)
+            .then(function(res) { return res.json() })
+            .then(function(data) {
+              setFocusedComment(data.focusedComment)
+              setBlobs(data.blobs)
+            })
+            .catch(function(err) {
+              console.error('Failed to reload thread:', err)
+            })
+        } else {
+          fetch('/api/comments?type=top-level&postId=' + postId)
+            .then(function(res) { return res.json() })
+            .then(function(data) {
+              setBlobs(data.blobs)
+            })
+            .catch(function(err) {
+              console.error('Failed to reload comments:', err)
+            })
+        }
+      })
+      .catch(function(err) {
+        console.error('Failed to post comment:', err)
+        setIsSubmitting(false)
       })
   }
 
@@ -423,6 +477,30 @@ export default function CommentSection({ postId, postTitle, postAuthorName, comm
         )}
 
       </div>
+
+      {/* ── Comment input box (always visible at bottom) ─────── */}
+      <div className="shrink-0 border-t border-zinc-800 px-4 py-3">
+        <p className="text-zinc-500 text-xs mb-1.5">
+          @{focusedComment && !focusedComment.isDeleted ? focusedComment.user.displayName : postAuthorName}
+        </p>
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={commentText}
+            onChange={function(e) { setCommentText(e.target.value) }}
+            placeholder="Write a comment..."
+            className="flex-1 bg-zinc-900 border border-zinc-700 rounded-full px-4 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-600"
+          />
+          <button
+            onClick={handleSubmitComment}
+            disabled={!commentText.trim() || isSubmitting}
+            className="text-blue-500 hover:text-blue-400 disabled:text-zinc-600 transition-colors text-sm font-medium px-2"
+          >
+            {isSubmitting ? '...' : 'Send'}
+          </button>
+        </div>
+      </div>
+
     </div>
   )
 }

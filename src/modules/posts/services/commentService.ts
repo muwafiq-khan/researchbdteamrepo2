@@ -3,6 +3,7 @@ import {
   getAncestorChain,
   getDirectChildren,
   getTopLevelComments,
+  createComment as createCommentInRepo,
 } from '../repository/commentRepo'
 
 // ============================================================
@@ -88,6 +89,17 @@ export async function getTopLevelBlobs(postId: string) {
   }
 
   return { blobs: blobs }
+}
+
+// ── Create a comment ─────────────────────────────────────────
+
+export async function createComment(data: {
+  postId: string
+  userId: string
+  content: string
+  parentId: string | null
+}) {
+  return createCommentInRepo(data)
 }
 
 // ── Priority sort ────────────────────────────────────────────

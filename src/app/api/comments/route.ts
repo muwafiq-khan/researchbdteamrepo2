@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '../auth/[...nextauth]/route'
 import {
   getTopLevelBlobs,
   getThreadBlobs,
   getBreadcrumbs,
+  createComment,
 } from '../../../modules/posts/services/commentService'
 
 // ── GET /api/comments?type=top-level&postId=xxx ───────────────
@@ -66,4 +69,31 @@ export async function GET(request: NextRequest) {
     { error: 'Invalid type. Use: top-level, thread, or ancestors' },
     { status: 400 }
   )
+}
+
+// ── POST /api/comments ────────────────────────────────────────
+// Body: { postId, content, parentId }
+
+export async function POST(request: NextRequest) {
+  const session = await getServerSession(authOptions)
+
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const body = await request.json()
+  const { postId, content, parentId } = body
+
+  if (!postId || !content?.trim()) {
+    return NextResponse.json({ error: 'postId and content are required' }, { status: 400 })
+  }
+
+  const comment = await createComment({
+    postId: postId,
+    userId: session.user.id,
+    content: content.trim(),
+    parentId: parentId ?? null,
+  })
+
+  return NextResponse.json({ comment: comment })
 }
