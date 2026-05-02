@@ -39,6 +39,7 @@ const SORT_OPTIONS = [
   { value: 'hIndex',    label: 'Highest H-Index' },
   { value: 'qualScore', label: 'Qualification Score' },
   { value: 'pubs',      label: 'Most Publications' },
+  { value: 'alphabetical', label:'alphabetical'},
 ]
 
 // ─── PAGE COMPONENT ───────────────────────────────────────────────────────────

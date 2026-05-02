@@ -49,6 +49,7 @@ export async function GET(request: NextRequest) {
   if (sortBy === 'hIndex')    orderBy = { researcher: { qualification: { hIndex:             'desc' } } }
   if (sortBy === 'qualScore') orderBy = { researcher: { qualification: { qualificationScore: 'desc' } } }
   if (sortBy === 'pubs')      orderBy = { researcher: { qualification: { publicationCount:   'desc' } } }
+  if (sortBy === 'alphabetical')      orderBy = { researcher:{ name:   'desc' } }
 
   // Fetch page of results + total count at the same time
   const [researchers, total] = await Promise.all([
