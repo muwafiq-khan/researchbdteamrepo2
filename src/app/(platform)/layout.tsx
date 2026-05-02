@@ -45,7 +45,7 @@ export default async function PlatformLayout({ children }: PlatformLayoutProps) 
     <FilterDataProvider fields={plainFields} countries={countries}>
       <div className="min-h-screen bg-black text-white flex flex-row">
 
-        <aside className="hidden md:flex flex-col items-start px-4 py-4 w-64 fixed h-full border-r border-zinc-800">
+        <aside className="hidden md:flex flex-col items-start px-4 py-4 w-64 fixed h-full border-r border-zinc-800 z-50">
           <Link href="/feed" className="text-white font-black text-3xl tracking-tighter mb-8 mt-2 px-3">
             RB
           </Link>

@@ -12,6 +12,7 @@ import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 // useRouter lets us programmatically navigate after login
 // Python equivalent: redirect('/feed') in a Django view
+import { useQueryClient } from '@tanstack/react-query'
 
 export default function LoginPage() {
   // email and password track what the user types
@@ -21,10 +22,10 @@ export default function LoginPage() {
   // error shows a message if login fails
   const [error, setError] = useState('')
 
-  // loading prevents double-submits while waiting for the server
   const [loading, setLoading] = useState(false)
 
   const router = useRouter()
+  const queryClient = useQueryClient()
 
   async function handleSubmit(e: React.FormEvent) {
     // e.preventDefault() stops the browser from doing a full page reload
@@ -51,8 +52,17 @@ export default function LoginPage() {
       setError('Invalid email or password')
       return
     }
-
-    // login successful — navigate to feed
+    // login successful — prefetch feed then navigate
+    queryClient.prefetchInfiniteQuery({
+      queryKey: ['feed'],
+      queryFn: async () => {
+        const res = await fetch(`/api/feed?page=1&limit=10`)
+        if (!res.ok) throw new Error('Network response was not ok')
+        return res.json()
+      },
+      initialPageParam: 1,
+    })
+    
     router.push('/feed')
   }
 

@@ -9,6 +9,7 @@ import SaveButton from './SaveButton'
 import CollabButton from './CollabButton'
 import AIAnalyzerButton from './AIAnalyzerButton'
 import Link from 'next/link'
+import Image from 'next/image'
 
 type PostCardProps = {
   id: string
@@ -58,10 +59,13 @@ export default function PostCard({
       <div className="flex items-center justify-between mb-3">
         <Link href={`/profile/${authorId}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
           {authorAvatar ? (
-            <img
+            <Image
               src={authorAvatar}
               alt={authorName}
-              className="w-10 h-10 rounded-full object-cover"
+              width={40}
+              height={40}
+              className="rounded-full object-cover"
+              loading="lazy"
             />
           ) : (
             <div className="w-10 h-10 rounded-full bg-zinc-700 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
