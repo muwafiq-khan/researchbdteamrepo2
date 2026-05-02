@@ -86,6 +86,7 @@ export default async function SavedPage() {
               commentCount={commentCount}
               initialFollowed={initialFollowed}
               initialSaved={initialSaved}
+              currentUserId={currentUserId}
             />
           )
         })
