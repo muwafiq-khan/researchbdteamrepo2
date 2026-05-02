@@ -1,45 +1,29 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { useFilterData } from '@/shared/providers/FilterDataProvider'
 
-// ── Types ─────────────────────────────────────────────────────
+// ─── TYPES ────────────────────────────────────────────────────────────────────
+// Shape of one researcher returned from the API
 
-type Qualification = {
-  hIndex: number
-  citationCount: number
-  publicationCount: number
-  qualificationScore: number
-  starScore: number
-}
-
-type ResearcherUser = {
+type Researcher = {
   id: string
   displayName: string
   avatarUrl: string | null
-  createdAt: string
   researcher: {
     academicLevel: string | null
     institution: string | null
     bio: string | null
-    skills: string[]
     researchFields: { field: { id: string; name: string } }[]
-    qualification: Qualification | null
+    qualification: { hIndex: number; citationCount: number; publicationCount: number } | null
   } | null
 }
 
-type FiltersState = {
-  search: string
-  fieldId: string
-  academicLevel: string
-  minCitations: string
-  minHIndex: string
-  sortBy: string
-}
+// ─── CONSTANTS ────────────────────────────────────────────────────────────────
+// Used to display human-readable labels instead of raw DB values
 
-const ACADEMIC_LEVEL_LABELS: Record<string, string> = {
+const LEVELS: Record<string, string> = {
   undergraduate: 'Undergraduate',
   postgraduate:  'Postgraduate',
   phd:           'PhD',
@@ -48,375 +32,191 @@ const ACADEMIC_LEVEL_LABELS: Record<string, string> = {
   industry:      'Industry',
 }
 
+// Dropdown options for the sort filter — value goes to API, label shows in UI
 const SORT_OPTIONS = [
-  { value: 'newest',    label: 'Newest' },
-  { value: 'citations', label: 'Most Citations' },
-  { value: 'hIndex',    label: 'Highest H-Index' },
-  { value: 'qualScore', label: 'Qualification Score' },
-  { value: 'pubs',      label: 'Most Publications' },
+  { value: 'newest',      label: 'Newest' },
+  { value: 'citations',   label: 'Most Citations' },
+  { value: 'hIndex',      label: 'Highest H-Index' },
+  { value: 'qualScore',   label: 'Qualification Score' },
+  { value: 'pubs',        label: 'Most Publications' },
+  { value: 'alphabetical', label: 'Alphabetical' },
 ]
 
-// ── Researcher Card ───────────────────────────────────────────
-
-function ResearcherCard({ user }: { user: ResearcherUser }) {
-  const r = user.researcher
-  const q = r?.qualification
-
-  return (
-    <Link
-      href={`/profile/${user.id}`}
-      className="block bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-600 transition-colors"
-    >
-      {/* Header */}
-      <div className="flex items-start gap-3 mb-3">
-        {user.avatarUrl ? (
-          <Image
-            src={user.avatarUrl}
-            alt={user.displayName}
-            width={48}
-            height={48}
-            className="rounded-full object-cover w-12 h-12 flex-shrink-0"
-          />
-        ) : (
-          <div className="w-12 h-12 rounded-full bg-zinc-700 flex items-center justify-center text-lg font-bold flex-shrink-0">
-            {user.displayName.charAt(0).toUpperCase()}
-          </div>
-        )}
-        <div className="min-w-0 flex-1">
-          <p className="text-white font-semibold text-sm truncate">{user.displayName}</p>
-          {r?.academicLevel && (
-            <p className="text-zinc-400 text-xs mt-0.5">
-              {ACADEMIC_LEVEL_LABELS[r.academicLevel] ?? r.academicLevel}
-            </p>
-          )}
-          {r?.institution && (
-            <p className="text-zinc-500 text-xs truncate">{r.institution}</p>
-          )}
-        </div>
-      </div>
-
-      {/* Bio */}
-      {r?.bio && (
-        <p className="text-zinc-400 text-xs leading-relaxed line-clamp-2 mb-3">{r.bio}</p>
-      )}
-
-      {/* Fields */}
-      {r && r.researchFields.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          {r.researchFields.slice(0, 3).map(({ field }) => (
-            <span
-              key={field.id}
-              className="text-[11px] bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded-full"
-            >
-              {field.name}
-            </span>
-          ))}
-          {r.researchFields.length > 3 && (
-            <span className="text-[11px] text-zinc-500">
-              +{r.researchFields.length - 3} more
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Metrics */}
-      {q && (
-        <div className="grid grid-cols-3 gap-2 border-t border-zinc-800 pt-3 mt-auto">
-          <div className="text-center">
-            <p className="text-white text-sm font-bold">{q.citationCount}</p>
-            <p className="text-zinc-500 text-[10px]">Citations</p>
-          </div>
-          <div className="text-center">
-            <p className="text-white text-sm font-bold">{q.hIndex}</p>
-            <p className="text-zinc-500 text-[10px]">H-Index</p>
-          </div>
-          <div className="text-center">
-            <p className="text-white text-sm font-bold">{q.publicationCount}</p>
-            <p className="text-zinc-500 text-[10px]">Publications</p>
-          </div>
-        </div>
-      )}
-    </Link>
-  )
-}
-
-// ── Main Page ─────────────────────────────────────────────────
+// ─── PAGE COMPONENT ───────────────────────────────────────────────────────────
 
 export default function ResearchersPage() {
+
+  // fields comes from a global provider — list of all research fields from DB
   const { fields } = useFilterData()
 
-  const [filters, setFilters] = useState<FiltersState>({
-    search:       '',
-    fieldId:      '',
-    academicLevel: '',
-    minCitations: '',
-    minHIndex:    '',
-    sortBy:       'newest',
-  })
-  const [pendingSearch, setPendingSearch] = useState('')
+  // ── Filter state — each one maps to a query param sent to the API ──
+  const [field_id, set_field_id]             = useState('')
+  const [academic_level, set_academic_level] = useState('')
+  const [min_citations, set_min_citations]   = useState('')
+  const [min_hindex, set_min_hindex]         = useState('')
+  const [sort_by, set_sort_by]               = useState('newest')
 
-  const [researchers, setResearchers] = useState<ResearcherUser[]>([])
-  const [total, setTotal]             = useState(0)
-  const [totalPages, setTotalPages]   = useState(1)
-  const [page, setPage]               = useState(1)
-  const [isLoading, setIsLoading]     = useState(true)
-  const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [showFilters, setShowFilters] = useState(false)
+  // ── Result state ──
+  const [researchers, set_researchers] = useState<Researcher[]>([])  // cards shown on screen
+  const [page, set_page]               = useState(1)                  // current page number
+  const [total_pages, set_total_pages] = useState(1)                  // total pages available
+  const [is_loading, set_is_loading]   = useState(true)               // shows "Loading..." text
 
-  const fetchResearchers = useCallback(async (f: FiltersState, p: number, append = false) => {
-    if (append) setIsLoadingMore(true)
-    else setIsLoading(true)
+  // ─── FETCH FUNCTION ───────────────────────────────────────────────────────
+  // Called whenever filters change or Load More is clicked
+  // append=false → replace the list (new filter applied)
+  // append=true  → add to the list (Load More clicked)
 
+  async function fetch_researchers(p: number, append: boolean) {
+    set_is_loading(true)
+
+    // Build URL query string — only include filters that have a value
     const params = new URLSearchParams()
-    if (f.search)        params.set('search', f.search)
-    if (f.fieldId)       params.set('fieldId', f.fieldId)
-    if (f.academicLevel) params.set('academicLevel', f.academicLevel)
-    if (f.minCitations)  params.set('minCitations', f.minCitations)
-    if (f.minHIndex)     params.set('minHIndex', f.minHIndex)
-    if (f.sortBy)        params.set('sortBy', f.sortBy)
+    if (field_id)       params.set('fieldId', field_id)
+    if (academic_level) params.set('academicLevel', academic_level)
+    if (min_citations)  params.set('minCitations', min_citations)
+    if (min_hindex)     params.set('minHIndex', min_hindex)
+    if (sort_by)        params.set('sortBy', sort_by)
     params.set('page', String(p))
 
-    try {
-      const res  = await fetch(`/api/researchers?${params.toString()}`)
-      const data = await res.json()
-      if (append) {
-        setResearchers(prev => [...prev, ...(data.researchers ?? [])])
-      } else {
-        setResearchers(data.researchers ?? [])
-      }
-      setTotal(data.total)
-      setTotalPages(data.totalPages)
-      setPage(p)
-    } catch (err) {
-      console.error('Failed to fetch researchers', err)
-    } finally {
-      setIsLoading(false)
-      setIsLoadingMore(false)
+    // Hit the backend — e.g. /api/researchers?academicLevel=phd&sortBy=hIndex&page=1
+    const res  = await fetch(`/api/researchers?${params.toString()}`)
+    const data = await res.json()
+
+    // Load More → keep existing cards and add new ones to the bottom
+    // New filter → throw away old cards and show fresh results
+    if (append) {
+      const combined = researchers.concat(data.researchers ?? [])
+      set_researchers(combined)
+    } else {
+      set_researchers(data.researchers ?? [])
     }
-  }, [])
 
-  // Initial load
-  useEffect(() => {
-    fetchResearchers(filters, 1)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  // Debounce search input
-  useEffect(() => {
-    const t = setTimeout(() => {
-      const updated = { ...filters, search: pendingSearch }
-      setFilters(updated)
-      fetchResearchers(updated, 1)
-    }, 400)
-    return () => clearTimeout(t)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingSearch])
-
-  function applyFilter(key: keyof FiltersState, value: string) {
-    const updated = { ...filters, [key]: value }
-    setFilters(updated)
-    fetchResearchers(updated, 1)
+    set_total_pages(data.totalPages)
+    set_page(p)
+    set_is_loading(false)
   }
 
-  function resetFilters() {
-    const fresh: FiltersState = {
-      search: '', fieldId: '', academicLevel: '',
-      minCitations: '', minHIndex: '', sortBy: 'newest',
-    }
-    setFilters(fresh)
-    setPendingSearch('')
-    fetchResearchers(fresh, 1)
+  // Re-fetch from page 1 whenever any filter state changes
+  useEffect(function () {
+    fetch_researchers(1, false)
+  }, [field_id, academic_level, min_citations, min_hindex, sort_by])
+
+  // Fetches next page and appends results to existing list
+  function load_more() {
+    fetch_researchers(page + 1, true)
   }
 
-  function loadMore() {
-    fetchResearchers(filters, page + 1, true)
-  }
-
-  const hasActiveFilters =
-    filters.fieldId || filters.academicLevel ||
-    filters.minCitations || filters.minHIndex ||
-    filters.sortBy !== 'newest'
+  // ─── RENDER ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="w-full">
-      {/* Sticky header */}
-      <div className="sticky top-0 z-30 bg-black border-b border-zinc-800 px-4 py-3">
-        <div className="flex items-center gap-3">
-          {/* Search */}
-          <div className="flex-1 relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">🔎</span>
-            <input
-              type="text"
-              placeholder="Search researchers..."
-              value={pendingSearch}
-              onChange={e => setPendingSearch(e.target.value)}
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-full pl-9 pr-4 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
-            />
-          </div>
-          {/* Filter toggle */}
-          <button
-            onClick={() => setShowFilters(p => !p)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-full border text-sm font-medium transition-colors ${
-              showFilters || hasActiveFilters
-                ? 'bg-white text-black border-white'
-                : 'border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-white'
-            }`}
-          >
-            <span>⚡</span>
-            <span className="hidden sm:inline">Filters</span>
-            {hasActiveFilters && (
-              <span className="bg-zinc-800 text-white text-[10px] px-1.5 py-0.5 rounded-full">
-                {[filters.fieldId, filters.academicLevel, filters.minCitations, filters.minHIndex]
-                  .filter(Boolean).length}
-              </span>
-            )}
-          </button>
-        </div>
+    <div className="w-full p-4">
 
-        {/* Filter panel */}
-        {showFilters && (
-          <div className="mt-3 flex flex-col gap-3">
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {/* Sort */}
-              <select
-                value={filters.sortBy}
-                onChange={e => applyFilter('sortBy', e.target.value)}
-                className="bg-zinc-900 border border-zinc-700 text-zinc-300 text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-zinc-500"
-              >
-                {SORT_OPTIONS.map(o => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </select>
+      {/* ── Filter dropdowns — each onChange updates its state → triggers useEffect → re-fetches ── */}
+      <div className="flex flex-wrap gap-2 mb-6">
 
-              {/* Field */}
-              <select
-                value={filters.fieldId}
-                onChange={e => applyFilter('fieldId', e.target.value)}
-                className="bg-zinc-900 border border-zinc-700 text-zinc-300 text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-zinc-500"
-              >
-                <option value="">All Fields</option>
-                {fields.map(f => (
-                  <option key={f.id} value={f.id}>{f.name}</option>
-                ))}
-              </select>
+        <select value={sort_by} onChange={function on_sort(e) { set_sort_by(e.target.value) }}
+          className="bg-zinc-900 border border-zinc-700 text-zinc-300 text-xs rounded-lg px-3 py-2 focus:outline-none">
+          {SORT_OPTIONS.map(function render_option(o) {
+            return <option key={o.value} value={o.value}>{o.label}</option>
+          })}
+        </select>
 
-              {/* Academic level */}
-              <select
-                value={filters.academicLevel}
-                onChange={e => applyFilter('academicLevel', e.target.value)}
-                className="bg-zinc-900 border border-zinc-700 text-zinc-300 text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-zinc-500"
-              >
-                <option value="">All Levels</option>
-                {Object.entries(ACADEMIC_LEVEL_LABELS).map(([val, label]) => (
-                  <option key={val} value={val}>{label}</option>
-                ))}
-              </select>
+        <select value={field_id} onChange={function on_field(e) { set_field_id(e.target.value) }}
+          className="bg-zinc-900 border border-zinc-700 text-zinc-300 text-xs rounded-lg px-3 py-2 focus:outline-none">
+          <option value="">All Fields</option>
+          {fields.map(function render_field(f) {
+            return <option key={f.id} value={f.id}>{f.name}</option>
+          })}
+        </select>
 
-              {/* Reset */}
-              <button
-                onClick={resetFilters}
-                className="text-xs text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 rounded-lg px-3 py-2 transition-colors"
-              >
-                Reset All
-              </button>
-            </div>
+        <select value={academic_level} onChange={function on_level(e) { set_academic_level(e.target.value) }}
+          className="bg-zinc-900 border border-zinc-700 text-zinc-300 text-xs rounded-lg px-3 py-2 focus:outline-none">
+          <option value="">All Levels</option>
+          {Object.entries(LEVELS).map(function render_level([val, label]) {
+            return <option key={val} value={val}>{label}</option>
+          })}
+        </select>
 
-            {/* Min metrics */}
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-[11px] text-zinc-500 mb-1 block">Min Citations</label>
-                <input
-                  type="number"
-                  min="0"
-                  placeholder="e.g. 100"
-                  value={filters.minCitations}
-                  onChange={e => applyFilter('minCitations', e.target.value)}
-                  className="w-full bg-zinc-900 border border-zinc-700 text-zinc-300 text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-zinc-500 placeholder-zinc-600"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] text-zinc-500 mb-1 block">Min H-Index</label>
-                <input
-                  type="number"
-                  min="0"
-                  placeholder="e.g. 5"
-                  value={filters.minHIndex}
-                  onChange={e => applyFilter('minHIndex', e.target.value)}
-                  className="w-full bg-zinc-900 border border-zinc-700 text-zinc-300 text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-zinc-500 placeholder-zinc-600"
-                />
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Numeric inputs — user types a number, filters by minimum value */}
+        <input type="number" min="0" placeholder="Min Citations" value={min_citations}
+          onChange={function on_citations(e) { set_min_citations(e.target.value) }}
+          className="bg-zinc-900 border border-zinc-700 text-zinc-300 text-xs rounded-lg px-3 py-2 w-32 focus:outline-none placeholder-zinc-600" />
+
+        <input type="number" min="0" placeholder="Min H-Index" value={min_hindex}
+          onChange={function on_hindex(e) { set_min_hindex(e.target.value) }}
+          className="bg-zinc-900 border border-zinc-700 text-zinc-300 text-xs rounded-lg px-3 py-2 w-32 focus:outline-none placeholder-zinc-600" />
+
       </div>
 
-      {/* Results count */}
-      {!isLoading && (
-        <div className="px-4 py-2 text-xs text-zinc-500 border-b border-zinc-800">
-          {total} researcher{total !== 1 ? 's' : ''} found
-        </div>
+      {/* ── Loading state ── */}
+      {is_loading && <p className="text-zinc-500 text-sm">Loading...</p>}
+
+      {/* ── Empty state — shown when fetch is done but no results matched ── */}
+      {!is_loading && researchers.length === 0 && (
+        <p className="text-zinc-500 text-sm">No researchers found.</p>
       )}
 
-      {/* Cards grid */}
-      <div className="p-4">
-        {isLoading ? (
+      {/* ── Results — shown when fetch is done and we have data ── */}
+      {!is_loading && researchers.length > 0 && (
+        <>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 animate-pulse">
-                <div className="flex gap-3 mb-3">
-                  <div className="w-12 h-12 rounded-full bg-zinc-800 flex-shrink-0" />
-                  <div className="flex-1 space-y-2 pt-1">
-                    <div className="h-3 bg-zinc-800 rounded w-3/4" />
-                    <div className="h-2.5 bg-zinc-800 rounded w-1/2" />
-                  </div>
-                </div>
-                <div className="space-y-2 mb-3">
-                  <div className="h-2.5 bg-zinc-800 rounded w-full" />
-                  <div className="h-2.5 bg-zinc-800 rounded w-5/6" />
-                </div>
-                <div className="flex gap-1.5 mb-3">
-                  <div className="h-5 bg-zinc-800 rounded-full w-16" />
-                  <div className="h-5 bg-zinc-800 rounded-full w-20" />
-                </div>
-                <div className="grid grid-cols-3 gap-2 pt-3 border-t border-zinc-800">
-                  {[0,1,2].map(j => (
-                    <div key={j} className="flex flex-col items-center gap-1">
-                      <div className="h-4 bg-zinc-800 rounded w-8" />
-                      <div className="h-2 bg-zinc-800 rounded w-12" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : researchers.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <p className="text-4xl mb-4">🔬</p>
-            <p className="text-zinc-400 font-medium mb-1">No researchers found</p>
-            <p className="text-zinc-600 text-sm">Try adjusting your filters</p>
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {researchers.map(user => (
-                <ResearcherCard key={user.id} user={user} />
-              ))}
-            </div>
+            {researchers.map(function render_researcher(user) {
+              const r = user.researcher
+              const q = r?.qualification
+              return (
+                <Link key={user.id} href={`/profile/${user.id}`}
+                  className="block bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-600 transition-colors">
 
-            {page < totalPages && (
-              <div className="flex justify-center mt-6">
-                <button
-                  onClick={loadMore}
-                  disabled={isLoadingMore}
-                  className="px-6 py-2.5 bg-zinc-900 border border-zinc-700 hover:border-zinc-500 text-zinc-300 hover:text-white text-sm font-medium rounded-full transition-colors disabled:opacity-50"
-                >
-                  {isLoadingMore ? 'Loading...' : 'Load more'}
-                </button>
-              </div>
-            )}
-          </>
-        )}
-      </div>
+                  {/* Basic info */}
+                  <p className="text-white font-semibold text-sm">{user.displayName}</p>
+                  {r?.academicLevel && <p className="text-zinc-400 text-xs mt-0.5">{LEVELS[r.academicLevel] ?? r.academicLevel}</p>}
+                  {r?.institution   && <p className="text-zinc-500 text-xs">{r.institution}</p>}
+                  {r?.bio           && <p className="text-zinc-400 text-xs mt-2 line-clamp-2">{r.bio}</p>}
+
+                  {/* Research field tags — show max 3 */}
+                  {r && r.researchFields.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {r.researchFields.slice(0, 3).map(function render_tag({ field }) {
+                        return <span key={field.id} className="text-[11px] bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded-full">{field.name}</span>
+                      })}
+                    </div>
+                  )}
+
+                  {/* Academic metrics — only shown if qualification data exists */}
+                  {q && (
+                    <div className="grid grid-cols-3 gap-2 border-t border-zinc-800 pt-3 mt-3 text-center">
+                      <div>
+                        <p className="text-white text-sm font-bold">{q.citationCount}</p>
+                        <p className="text-zinc-500 text-[10px]">Citations</p>
+                      </div>
+                      <div>
+                        <p className="text-white text-sm font-bold">{q.hIndex}</p>
+                        <p className="text-zinc-500 text-[10px]">H-Index</p>
+                      </div>
+                      <div>
+                        <p className="text-white text-sm font-bold">{q.publicationCount}</p>
+                        <p className="text-zinc-500 text-[10px]">Publications</p>
+                      </div>
+                    </div>
+                  )}
+                </Link>
+              )
+            })}
+          </div>
+
+          {/* Load More — only shown if more pages exist */}
+          {page < total_pages && (
+            <div className="flex justify-center mt-6">
+              <button onClick={load_more}
+                className="px-6 py-2.5 bg-zinc-900 border border-zinc-700 hover:border-zinc-500 text-zinc-300 text-sm rounded-full transition-colors">
+                Load more
+              </button>
+            </div>
+          )}
+        </>
+      )}
+
     </div>
   )
 }

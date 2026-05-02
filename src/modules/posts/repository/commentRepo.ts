@@ -1,5 +1,14 @@
 import { prisma } from '../../../lib/prisma'
 
+// ============================================================
+// COMMENT REPO
+// Pure database access layer. Every function here does ONE thing:
+// run a Prisma query and return the result. No business logic,
+// no sorting, no data transformation.
+// ============================================================
+
+// Shared select object — used by every comment query.
+// Defined once so we don't repeat the same 15 fields everywhere.
 const COMMENT_SELECT = {
   id: true,
   postId: true,
@@ -28,6 +37,9 @@ export async function getCommentById(commentId: string) {
   })
 }
 
+// Walk up the parent chain to build breadcrumbs.
+// Returns array in top-down order: [oldest ancestor, ..., direct parent]
+// Does NOT include the comment itself.
 export async function getAncestorChain(commentId: string) {
   const ancestors = []
 
@@ -50,24 +62,38 @@ export async function getAncestorChain(commentId: string) {
   return ancestors
 }
 
+// Fetch direct children of a comment.
+// Service layer sorts these and picks top 2 per blob.
 export async function getDirectChildren(parentId: string) {
   return prisma.post_comments.findMany({
-    where: { parentId, isDeleted: false },
+    where: {
+      parentId: parentId,
+      isDeleted: false,
+    },
     select: COMMENT_SELECT,
     orderBy: { createdAt: 'asc' },
   })
 }
 
+// Fetch top-level comments for a post (parentId = null).
 export async function getTopLevelComments(postId: string) {
   return prisma.post_comments.findMany({
-    where: { postId, parentId: null, isDeleted: false },
+    where: {
+      postId: postId,
+      parentId: null,
+      isDeleted: false,
+    },
     select: COMMENT_SELECT,
     orderBy: { createdAt: 'asc' },
   })
 }
 
+// Count all comments on a post (for the chat icon badge).
 export async function getCommentCount(postId: string) {
   return prisma.post_comments.count({
-    where: { postId, isDeleted: false },
+    where: {
+      postId: postId,
+      isDeleted: false,
+    },
   })
 }
