@@ -4,50 +4,53 @@ import { authOptions } from '../auth/[...nextauth]/route'
 import { prisma } from '../../../lib/prisma'
 import Groq from 'groq-sdk'
 
+
+// Qualification fields to fetch
+const qual_select = {
+  hIndex: true,
+  citationCount: true,
+  publicationCount: true,
+  qualificationScore: true,
+  starScore: true,
+  contributionPoints: true,
+}
+
+// Researcher profile fields to fetch
+const researcher_select = {
+  academicLevel: true,
+  institution: true,
+  bio: true,
+  skills: true,
+  researchFields: { select: { field: { select: { name: true } } } },
+  qualification: { select: qual_select },
+}
+
+// Peer evaluation score fields to fetch
+const eval_select = {
+  punctualityScore: true,
+  dedicationScore: true,
+  collaborationScore: true,
+  integrityScore: true,
+  analyticalScore: true,
+  inquisitivenessScore: true,
+  adaptabilityScore: true,
+  responsivenessScore: true,
+  openMindednessScore: true,
+}
+
+// Top-level user fields to fetch
+const user_select = {
+  displayName: true,
+  researcher:          { select: researcher_select },
+  receivedEvaluations: { select: eval_select },
+  posts:               { select: { postType: true }, take: 50 },
+}
+
+// Now the function itself is just 3 lines
 async function get_user_profile(user_id: string) {
   return prisma.users.findUnique({
-    where: { id: user_id },
-    select: {
-      displayName: true,
-      researcher: {
-        select: {
-          academicLevel: true,
-          institution: true,
-          bio: true,
-          skills: true,
-          researchFields: {
-            select: { field: { select: { name: true } } },
-          },
-          qualification: {
-            select: {
-              hIndex: true,
-              citationCount: true,
-              publicationCount: true,
-              qualificationScore: true,
-              starScore: true,
-              contributionPoints: true,
-            },
-          },
-        },
-      },
-      receivedEvaluations: {
-        select: {
-          punctualityScore: true,
-          dedicationScore: true,
-          collaborationScore: true,
-          integrityScore: true,
-          analyticalScore: true,
-          inquisitivenessScore: true,
-          adaptabilityScore: true,
-          responsivenessScore: true,
-          openMindednessScore: true,
-        },
-      },
-      posts: {
-        select: { postType: true },
-        take: 50,
-      },
-    },
+    where:  { id: user_id },
+    select: user_select,
   })
 }
 function calc_avg(evals: any[], key: string): number {
